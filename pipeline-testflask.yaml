@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: pipeline-testflask
+  namespace: $NAMESPACE
+spec:
+  resources:
+  - name: testflask-git
+    type: git
+  - name: testflask-image
+    type: image
+  tasks:
+  - name: s2i-python-3
+    params:
+    - name: MINOR_VERSION
+      value: "6"
+    - name: PATH_CONTEXT
+      value: .
+    - name: TLSVERIFY
+      value: "false"
+    resources:
+      inputs:
+      - name: source
+        resource: testflask-git
+      outputs:
+      - name: image
+        resource: testflask-image
+    taskRef:
+      kind: ClusterTask
+      name: s2i-python-3
