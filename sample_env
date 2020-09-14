@@ -1,23 +1,23 @@
 #App
-export SECRET_NAME="github-secret"
-export SSHKEY_PATH="/root/.ssh/env_key1"
-export MYSQL_USER="github-secret"
-export MYSQL_USER="user"
-export MYSQL_PASSWORD="pass"
-export MYSQL_DB="testdb"
-export MYSQL_HOST="mysql"
-export NAMESPACE_DEV="apptest"
-export NAMESPACE_PROD="appprod"
-export APP_NAME="testflask"
-export APP_CONFIG="gunicorn.conf.py"
-export APP_MODULE="testapp:app"
-export MYSQL_DATABASE="testdb"
-export SECRET_NAME="my-secret"
-
+SECRET_NAME="github-secret"
+SSHKEY_PATH="/root/.ssh/env_key1"
+MYSQL_USER="github-secret"
+MYSQL_USER="user"
+MYSQL_PASSWORD="pass"
+MYSQL_DB="testdb"
+MYSQL_HOST="mysql"
+NAMESPACE_DEV="apptest"
+NAMESPACE_PROD="appprod"
+APP_NAME="testflask"
+APP_CONFIG="gunicorn.conf.py"
+APP_MODULE="testapp:app"
+MYSQL_DATABASE="testdb"
+SECRET_NAME="my-secret"
+CODE_URL=https://github.com/MoOyeg/testFlask.git
 
 #Jenkins
-export JENKINS_NAMESPACE="1234-jenkins"
+JENKINS_NAMESPACE="1234-jenkins"
 
 #Tekton
-export TEKTON_NAMESPACE="1234-tekton"
-export TEKTON_PVC_NAME=tekton-repo
+TEKTON_NAMESPACE="1234-tekton"
+TEKTON_PVC_NAME=tekton-repo
