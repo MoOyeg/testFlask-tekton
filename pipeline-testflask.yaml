@@ -126,12 +126,12 @@ spec:
           value: >-
             oc delete dc/$1 -n $2 || true ; oc delete svc/$1 -n $2 || true ; oc
             delete route/$1 -n $2 || true; oc delete dc/$3 -n $2 || true; oc
-            delete svc/$3 -n $2 || true
+            delete svc/$3 -n $2 || true;oc delete route/$3 -n $2
         - name: ARGS
           value:
-            - mysql
-            - apptest
-            - testflask
+            - \$(params.MYSQL_HOST)
+            - \$(params.NAMESPACE_DEV)
+            - \$(params.APP_NAME)
       resources:
         inputs:
           - name: source
