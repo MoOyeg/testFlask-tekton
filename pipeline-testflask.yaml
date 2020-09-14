@@ -1,15 +1,36 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: testflask-pipeline
-  namespace: 1234-tekton
+  name: ${APP_NAME}-pipeline
+  namespace: ${TEKTON_NAMESPACE}
 spec:
   params:
-    - default: latest
-      name: PYTHON
+    - default: ''
+      name: APP_IMAGE_URL
       type: string
+    - default: ''
+      name: APP_CONFIG
+      type: string
+    - default: ''
+      name: APP_NAME
+      type: string
+    - default: ''
+      name: APP_MODULE
+      type: string
+    - default: ''
+      name: MYSQL_DATABASE
+      type: string
+    - default: ''
+      name: SECRET_NAME
+      type: string
+    - default: ''
+      name: MYSQL_HOST
+      type: string    
+    - default: ''
+      name: NAMESPACE_DEV
+      type: string  
   resources:
-    - name: testflask-git
+    - name: test-git
       type: git
   tasks:
     - name: git-clone
@@ -22,10 +43,10 @@ spec:
           value: 'true'
         - name: depth
           value: '1'
+        - name: sslVerify
+          value: 'true'
         - name: subdirectory
           value: src
-        - name: sslVerify
-          value: 'false'
         - name: deleteExisting
           value: 'true'
       taskRef:
@@ -33,7 +54,7 @@ spec:
         name: git-clone
       workspaces:
         - name: output
-          workspace: local-repo
+          workspace: ${TEKTON_PVC_NAME}
     - name: python-unittest
       params:
         - name: PYTHON
@@ -51,56 +72,53 @@ spec:
         name: python-unittest
       workspaces:
         - name: output
-          workspace: local-repo
-    - name: create-dev-db
+          workspace: ${TEKTON_PVC_NAME}
+    - name: s2i-python-3
       params:
-        - name: SCRIPT
-          value: oc $@
-        - name: ARGS
-          value:
-            - >-
-              new-app mysql --env=MYSQL_DATABASE=testdb -l db=mysql -l
-              app=testflask -n apptest --as-deployment-config=true
-      resources:
-        inputs:
-          - name: source
-            resource: testflask-git
+        - name: MINOR_VERSION
+          value: '6'
+        - name: PATH_CONTEXT
+          value: src
+        - name: TLSVERIFY
+          value: 'false'
+        - name: IMAGE
+          value: 'image-registry.openshift-image-registry.svc:5000/${NAMESPACE_DEV}/${APP_NAME}'
       runAfter:
         - python-unittest
       taskRef:
         kind: ClusterTask
-        name: openshift-client
-    - name: create-dev-svc
+        name: s2i-python-3
+      workspaces:
+        - name: source
+          workspace: ${TEKTON_PVC_NAME}
+    - name: openshift-client
       params:
         - name: SCRIPT
-          value: oc $@
+          value: >-
+            oc new-app \$1 --env=MYSQL_DATABASE=\$2 -l db=\$1 -l app=\$3 -n \$4
+            --as-deployment-config=true;  oc expose svc/\$1 -n \$4; oc set env
+            dc/\$1 --from=secret/\$5 -n \$4; oc label dc/\$1 app=\$3 --overwrite=true
+            -n \$4; oc new-app --image-stream \$8 --name \$3 --env=APP_CONFIG=\$6
+            --env=APP_MODULE=\$7 --env=MYSQL_HOST=\$1 --env=MYSQL_DB=\$2
+            --as-deployment-config=true -n \$4; oc expose svc/\$3 -n \$4
         - name: ARGS
           value:
-            - expose svc/mysql -n apptest
+            - \$(params.MYSQL_HOST)
+            - \$(params.MYSQL_DATABASE)
+            - \$(params.APP_NAME)
+            - \$(params.NAMESPACE_DEV)
+            - \$(params.SECRET_NAME)
+            - \$(params.APP_CONFIG)
+            - \$(params.APP_MODULE)
+            - \$(params.APP_IMAGE_URL)
       resources:
         inputs:
           - name: source
-            resource: testflask-git
+            resource: test-git
       runAfter:
-        - create-dev-db
-      taskRef:
-        kind: ClusterTask
-        name: openshift-client
-    - name: set-dev-db-env
-      params:
-        - name: SCRIPT
-          value: oc $@
-        - name: ARGS
-          value:
-            - set env dc/mysql --from=secret/my-secret -n apptest
-      resources:
-        inputs:
-          - name: source
-            resource: testflask-git
-      runAfter:
-        - create-dev-svc
+        - s2i-python-3
       taskRef:
         kind: ClusterTask
         name: openshift-client
   workspaces:
-    - name: local-repo
+    - name: ${TEKTON_PVC_NAME}

@@ -12,6 +12,7 @@ export APP_NAME="testflask"
 export APP_CONFIG="gunicorn.conf.py"
 export APP_MODULE="testapp:app"
 export MYSQL_DATABASE="testdb"
+export SECRET_NAME="my-secret"
 
 
 #Jenkins

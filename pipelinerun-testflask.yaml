@@ -1,20 +1,37 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: testflask-pipelinerun-
-  namespace: 1234-tekton
+  generateName: ${APP_NAME}-pipelinerun-
+  namespace: ${TEKTON_NAMESPACE}
   labels:
-    tekton.dev/pipeline: testflask-pipeline
+    tekton.dev/pipeline: ${APP_NAME}-pipeline
 spec:
+  params:
+    - name: APP_IMAGE_URL
+      value: ${NAMESPACE_DEV}/${APP_NAME}
+    - name: APP_CONFIG
+      value: ${APP_CONFIG}
+    - name: APP_NAME
+      value: ${APP_NAME}
+    - name: APP_MODULE
+      value: ${APP_MODULE}
+    - name: MYSQL_DATABASE
+      value: ${MYSQL_DATABASE}
+    - name: SECRET_NAME
+      value: ${SECRET_NAME}
+    - name: MYSQL_HOST
+      value: ${MYSQL_HOST}
+    - name: NAMESPACE_DEV
+      value: ${NAMESPACE_DEV}
   pipelineRef:
-    name: testflask-pipeline
+    name: ${APP_NAME}-pipeline
   resources:
-    - name: testflask-git
+    - name: test-git
       resourceRef:
         name: git-testflask
   serviceAccountName: pipeline
   timeout: 1h0m0s
   workspaces:
-    - name: local-repo
+    - name: ${TEKTON_PVC_NAME}
       persistentVolumeClaim:
-        claimName: tekton-repo
+        claimName: ${TEKTON_PVC_NAME}
