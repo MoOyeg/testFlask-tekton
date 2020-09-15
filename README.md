@@ -47,3 +47,19 @@ So this example assumes a pipeline scenario where there is a running production 
      oc annotate dc/$APP_NAME app.openshift.io/connects-to=$MYSQL_HOST -n $NAMESPACE_PROD
   ```
 
+5 **Create Pipeline Components**<br/>
+  - Create PVC for Tekton Workspace<br/>
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipeline-pvc.yaml | envsubst | oc create -f -```<br/>
+
+  - Create custom task<br/>
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/task-python-unittest.yaml | envsubst '$TEKTON_NAMESPACE' | oc create -f -```<br/>
+
+  - Create Resources<br/>
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipelineresource-git.yaml | envsubst | oc create -f -```<br/>
+
+  - Create Pipeline<br/>
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipeline-testflask.yaml | envsubst | oc create -f -```<br/>
+
+6 **Start Pipeline Execution by Creating PipelineRun**<br/>
+  - Create PipelineRun<br/>
+   ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipelinerun-testflask.yaml | envsubst | oc create -f -```<br/>

@@ -27,14 +27,14 @@ spec:
       name: SOURCE_PATH
       type: string
   steps:
-    - image: 'docker.io/python:\$(inputs.params.PYTHON)'
+    - image: 'docker.io/python:$(inputs.params.PYTHON)'
       name: python-unittest
       resources: {}
       script: |
         export PATH=$PATH:$HOME/.local/bin
         
-        pip install -r \$(inputs.params.REQUIREMENTS_FILE)
-        python \$(inputs.params.TEST_FILE) || echo "unittest Failed"
-      workingDir: \$(workspaces.output.path)/$(inputs.params.SOURCE_PATH)
+        pip install -r $(inputs.params.REQUIREMENTS_FILE)
+        python $(inputs.params.TEST_FILE) || echo "unittest Failed"
+      workingDir: $(workspaces.output.path)/$(inputs.params.SOURCE_PATH)
   workspaces:
     - name: output
