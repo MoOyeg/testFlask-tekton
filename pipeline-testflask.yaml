@@ -95,22 +95,22 @@ spec:
       params:
         - name: SCRIPT
           value: >-
-            oc new-app \$1 --env=MYSQL_DATABASE=\$2 -l db=\$1 -l app=\$3 -n \$4
-            --as-deployment-config=true;  oc expose svc/\$1 -n \$4; oc set env
-            dc/\$1 --from=secret/\$5 -n \$4; oc label dc/\$1 app=\$3 --overwrite=true
-            -n \$4; oc new-app --image-stream \$8 --name \$3 --env=APP_CONFIG=\$6
-            --env=APP_MODULE=\$7 --env=MYSQL_HOST=\$1 --env=MYSQL_DB=\$2
-            --as-deployment-config=true -n \$4; oc expose svc/\$3 -n \$4
+            oc new-app $1 --env=MYSQL_DATABASE=$2 -l db=$1 -l app=$3 -n $4
+            --as-deployment-config=true;  oc expose svc/$1 -n $4; oc set env
+            dc/$1 --from=secret/$5 -n $4; oc label dc/$1 app=$3 --overwrite=true
+            -n $4; oc new-app --image-stream $8 --name $3 --env=APP_CONFIG=$6
+            --env=APP_MODULE=$7 --env=MYSQL_HOST=$1 --env=MYSQL_DB=$2
+            --as-deployment-config=true -n $4; oc expose svc/$3 -n $4
         - name: ARGS
           value:
-            - \$(params.MYSQL_HOST)
-            - \$(params.MYSQL_DATABASE)
-            - \$(params.APP_NAME)
-            - \$(params.NAMESPACE_DEV)
-            - \$(params.SECRET_NAME)
-            - \$(params.APP_CONFIG)
-            - \$(params.APP_MODULE)
-            - \$(params.APP_IMAGE_URL)
+            - $(params.MYSQL_HOST)
+            - $(params.MYSQL_DATABASE)
+            - $(params.APP_NAME)
+            - $(params.NAMESPACE_DEV)
+            - $(params.SECRET_NAME)
+            - $(params.APP_CONFIG)
+            - $(params.APP_MODULE)
+            - $(params.APP_IMAGE_URL)
       resources:
         inputs:
           - name: source
@@ -129,9 +129,9 @@ spec:
             delete svc/$3 -n $2 || true;oc delete route/$3 -n $2
         - name: ARGS
           value:
-            - \$(params.MYSQL_HOST)
-            - \$(params.NAMESPACE_DEV)
-            - \$(params.APP_NAME)
+            - $(params.MYSQL_HOST)
+            - $(params.NAMESPACE_DEV)
+            - $(params.APP_NAME)
       resources:
         inputs:
           - name: source
