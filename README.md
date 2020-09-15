@@ -11,16 +11,16 @@ So this example assumes a pipeline scenario where there is a running production 
 2 **Create a new project for Tekton Pipeline**<br/>
 ```oc new-project $TEKTON_NAMESPACE```<br/>
 
-3 **Give Permissions to Tekton Pipeline User on Test and Prod Namespaces so we can build in those namespaces**<br/>
-```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $NAMESPACE_DEV```<br/>
-```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $NAMESPACE_PROD```<br/>
-```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $TEKTON_NAMESPACE```<br/>
-
-4 **Create prod and test projects for your pipeline**<br/>
+3 **Create prod and test projects for your pipeline**<br/>
   - Create Projects <br/>
   ```oc new-project $NAMESPACE_DEV```<br/>
   ```oc new-project $NAMESPACE_PROD```<br/>
   
+  - Give Permissions to Tekton Pipeline User on Test and Prod Namespaces so we can build in those namespaces<br/>
+  ```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $NAMESPACE_DEV```<br/>
+  ```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $NAMESPACE_PROD```<br/>
+  ```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $TEKTON_NAMESPACE```<br/>
+
   - Create our Infrastructure Secret in our Development and Production<br/>
   ```oc create secret generic ${SECRET_NAME} --from-literal=MYSQL_USER=$MYSQL_USER --from-literal=MYSQL_PASSWORD=$MYSQL_PASSWORD -n $NAMESPACE_DEV```<br/>
   ```oc create secret generic ${SECRET_NAME} --from-literal=MYSQL_USER=$MYSQL_USER --from-literal=MYSQL_PASSWORD=$MYSQL_PASSWORD -n $NAMESPACE_PROD```<br/>
@@ -47,7 +47,7 @@ So this example assumes a pipeline scenario where there is a running production 
      oc annotate dc/$APP_NAME app.openshift.io/connects-to=$MYSQL_HOST -n $NAMESPACE_PROD
   ```
 
-5 **Create Pipeline Components**<br/>
+4 **Create Pipeline Components**<br/>
   - Create PVC for Tekton Workspace<br/>
     ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipeline-pvc.yaml | envsubst | oc create -f -```<br/>
 
@@ -60,6 +60,6 @@ So this example assumes a pipeline scenario where there is a running production 
   - Create Pipeline<br/>
     ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipeline-testflask.yaml | envsubst | oc create -f -```<br/>
 
-6 **Start Pipeline Execution by Creating PipelineRun**<br/>
+5 **Start Pipeline Execution by Creating PipelineRun**<br/>
   - Create PipelineRun<br/>
    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipelinerun-testflask.yaml | envsubst | oc create -f -```<br/>
