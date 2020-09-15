@@ -120,6 +120,25 @@ spec:
       taskRef:
         kind: ClusterTask
         name: openshift-client
+    - name: tag-dev-prod
+      params:
+        - name: SCRIPT
+          value: >-
+            oc tag $2/$1:latest $3/$1:latest
+        - name: ARGS
+          value:
+            - $(params.APP_NAME)
+            - $(params.NAMESPACE_DEV)
+            - $(params.NAMESPACE_PROD)
+      resources:
+        inputs:
+          - name: source
+            resource: test-git
+      runAfter:
+        - build-dev-env
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
     - name: cleanup-dev-env
       params:
         - name: SCRIPT
@@ -137,7 +156,7 @@ spec:
           - name: source
             resource: test-git
       runAfter:
-        - build-dev-env
+        - tag-dev-prod
       taskRef:
         kind: ClusterTask
         name: openshift-client
