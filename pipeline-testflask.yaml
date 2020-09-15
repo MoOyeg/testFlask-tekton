@@ -29,6 +29,9 @@ spec:
     - default: ''
       name: NAMESPACE_DEV
       type: string  
+    - default: ''
+      name: NAMESPACE_PROD
+      type: string 
   resources:
     - name: test-git
       type: git

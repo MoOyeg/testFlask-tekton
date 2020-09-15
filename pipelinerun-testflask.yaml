@@ -23,6 +23,8 @@ spec:
       value: ${MYSQL_HOST}
     - name: NAMESPACE_DEV
       value: ${NAMESPACE_DEV}
+    - name: NAMESPACE_PROD
+      value: ${NAMESPACE_PROD}
   pipelineRef:
     name: ${APP_NAME}-pipeline
   resources:
