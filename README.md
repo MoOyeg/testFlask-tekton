@@ -6,7 +6,7 @@ So this example assumes a pipeline scenario where there is a running production 
 
 ### Steps to Run<br/>
 1 **Source Sample Environment**<br/>
-```source ./sample_env```<br/>
+```eval "$(curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/sample_env)"```<br/>
 
 2 **Create a new project for Tekton Pipeline**<br/>
 ```oc new-project $TEKTON_NAMESPACE```<br/>
@@ -26,13 +26,13 @@ So this example assumes a pipeline scenario where there is a running production 
   ```oc create secret generic ${SECRET_NAME} --from-literal=MYSQL_USER=$MYSQL_USER --from-literal=MYSQL_PASSWORD=$MYSQL_PASSWORD -n $NAMESPACE_PROD```<br/>
   
   - Create our Database in Production<br/>
-  ```oc new-app $MYSQL_HOST --env=MYSQL_DATABASE=$MYSQL_DB -l db=${MYSQL_HOST} -l app=${APP_NAME} --as-deployment-config=true -n ${NAMESPACE_PROD}```<br/>
+  ```oc new-app $MYSQL_HOST --env=MYSQL_DATABASE=$MYSQL_DATABASE -l db=${MYSQL_HOST} -l app=${APP_NAME} --as-deployment-config=true -n ${NAMESPACE_PROD}```<br/>
   
   - Set our Secret on the Production Database<br/>
   ```oc set env dc/$MYSQL_HOST --from=secret/${SECRET_NAME} -n $NAMESPACE_PROD```<br/>
    
   - Create our Production Application<br/>
-  ```oc new-app ${CODE_URL} --name=$APP_NAME -l app=${APP_NAME} --strategy=source --env=APP_CONFIG=${APP_CONFIG} --env=APP_MODULE=${APP_MODULE} --env=MYSQL_HOST=$MYSQL_HOST --env=MYSQL_DB=$MYSQL_DB --as-deployment-config=true -n $NAMESPACE_PROD```<br/>
+  ```oc new-app ${CODE_URL} --name=$APP_NAME -l app=${APP_NAME} --strategy=source --env=APP_CONFIG=${APP_CONFIG} --env=APP_MODULE=${APP_MODULE} --env=MYSQL_HOST=$MYSQL_HOST --env=MYSQL_DATABASE=$MYSQL_DATABASE --as-deployment-config=true -n $NAMESPACE_PROD```<br/>
   
   - Set our Secret on the Production Application<br/>
   ```oc set env dc/$APP_NAME --from=secret/${SECRET_NAME} -n $NAMESPACE_PROD```
