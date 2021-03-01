@@ -6,7 +6,7 @@ So this example assumes a pipeline scenario where there is a running production 
 
 ### Steps to Run<br/>
 1 **Source Sample Environment**<br/>
-```eval "$(curl https://https://raw.githubusercontent.com/MoOyeg/testFlask/master/sample_env)"```<br/>
+```eval "$(curl https://raw.githubusercontent.com/MoOyeg/testFlask/master/sample_env)"```<br/>
 
 2 **Create a new project for Tekton Pipeline**<br/>
 ```oc new-project $TEKTON_NAMESPACE```<br/>
