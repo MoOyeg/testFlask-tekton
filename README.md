@@ -1,5 +1,7 @@
 # testFlask-tekton
 Sample Tekton Pipeline for a Flask Python Application<br/>
+Pre-Requisites: Install Openshift Pipelines Operator:https://docs.openshift.com/container-platform/4.6/pipelines/installing-pipelines.html<br/>
+
 Application will show how we can use Tekton to deploy/test a flask application running on openshift, the Application being used is [testFlask](https://github.com/MoOyeg/testFlask.git)<br/>
 Environment variables used in Commands have samples in the sample_env file.<br/>
 So this example assumes a pipeline scenario where there is a running production application represented by our Production Project($NAMESPACE_PROD) and at build time we deploy the same exact infrastructure in our devlopment project ($NAMESPACE_DEV) and test, when all satisfied we promote our dev image to production which is automatically deployed based on a trigger from our imagestream.
