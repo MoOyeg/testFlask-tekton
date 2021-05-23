@@ -78,8 +78,8 @@ spec:
           workspace: ${TEKTON_PVC_NAME}
     - name: s2i-build-code
       params:
-        - name: MINOR_VERSION
-          value: '6'
+        - name: VERSION
+          value: '3.8-ubi8'
         - name: PATH_CONTEXT
           value: src
         - name: TLSVERIFY
@@ -90,7 +90,7 @@ spec:
         - python-unittest
       taskRef:
         kind: ClusterTask
-        name: s2i-python-3
+        name: s2i-python
       workspaces:
         - name: source
           workspace: ${TEKTON_PVC_NAME}
