@@ -6,7 +6,21 @@ Application will show how we can use Tekton to deploy/test a flask application r
 Environment variables used in Commands have samples in the sample_env file.<br/>
 So this example assumes a pipeline scenario where there is a running production application represented by our Production Project($NAMESPACE_PROD) and at build time we deploy the same exact infrastructure in our devlopment project ($NAMESPACE_DEV) and test, when all satisfied we promote our dev image to production which is automatically deployed based on a trigger from our imagestream.
 
-### Steps to Run<br/>
+### Steps to Run via Kustomize<br/>
+1 **Create Dev Environment**<br/>
+```oc apply -k ./overlays/dev```<br/>
+
+2 **Create Prod Environment**<br/>
+```oc apply -k ./overlays/prod```<br/>
+
+3 **Create CICD Environment**<br/>
+``` kustomize build ./cicd | oc create -f -```<br/>
+
+To use the eventlistener remember to create a webhook<br/>
+
+----------------------------------------------------------------------------------
+
+### Steps to Run via oc/kubectl commands<br/>
 1 **Source Sample Environment**<br/>
 ```eval "$(curl https://raw.githubusercontent.com/MoOyeg/testFlask/master/sample_env)"```<br/>
 
@@ -51,17 +65,17 @@ So this example assumes a pipeline scenario where there is a running production 
 
 4 **Create Pipeline Components**<br/>
   - Create PVC for Tekton Workspace<br/>
-    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipeline-pvc.yaml | envsubst | oc create -f -```<br/>
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipeline-pvc.yaml | envsubst | oc create -f -```<br/>
 
   - Create custom task<br/>
-    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/task-python-unittest.yaml | envsubst '$TEKTON_NAMESPACE' | oc create -f -```<br/>
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/task-python-unittest.yaml | envsubst '$TEKTON_NAMESPACE' | oc create -f -```<br/>
 
   - Create Resources<br/>
-    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipelineresource-git.yaml | envsubst | oc create -f -```<br/>
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipelineresource-git.yaml | envsubst | oc create -f -```<br/>
 
   - Create Pipeline<br/>
-    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipeline-testflask.yaml | envsubst | oc create -f -```<br/>
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipeline-testflask.yaml | envsubst | oc create -f -```<br/>
 
 5 **Start Pipeline Execution by Creating PipelineRun**<br/>
   - Create PipelineRun<br/>
-   ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/pipelinerun-testflask.yaml | envsubst | oc create -f -```<br/>
+   ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipelinerun-testflask.yaml | envsubst | oc create -f -```<br/>
