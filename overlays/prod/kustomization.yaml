@@ -11,6 +11,8 @@ bases:
 resources:
   - namespace.yaml
   - prod-rolebinding.yaml
+generatorOptions:
+  disableNameSuffixHash: true
 secretGenerator:
   - name: my-secret
     literals:
