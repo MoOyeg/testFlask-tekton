@@ -6,3 +6,10 @@ resources:
   - testflask-deployment.yaml
   - testflask-route.yaml
   - testflask-service.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+  - name: my-secret
+    literals:
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pass
