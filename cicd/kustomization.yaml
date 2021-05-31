@@ -8,6 +8,7 @@ resources:
   - 400-pipeline-service-rolebinding.yaml
   - 500-pipeline-pvc.yaml
   - 500-pipelineresource-git.yaml
+  - 500-pipeline-testflask.yaml
   - 600-eventlistener.yaml
   - 600-messagebinding.yaml
   - 600-triggerbinding.yaml
