@@ -8,6 +8,7 @@ commonLabels:
   editor: kustomize
 bases:
   - ../../base
+  - ../../base-secret
 resources:
   - namespace.yaml
   - prod-rolebinding.yaml
