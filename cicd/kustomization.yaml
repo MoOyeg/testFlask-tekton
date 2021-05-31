@@ -13,6 +13,7 @@ resources:
   - 600-messagebinding.yaml
   - 600-triggerbinding.yaml
   - 600-triggertemplate.yaml
+  - 700-listener-route.yaml
   - 500-task-python-unittest.yaml
   - 900-pipelinerun-testflask.yaml
 patchesJson6902:
