@@ -11,3 +11,8 @@ bases:
 resources:
   - namespace.yaml
   - prod-rolebinding.yaml
+secretGenerator:
+  - name: my-secret
+    literals:
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pass
