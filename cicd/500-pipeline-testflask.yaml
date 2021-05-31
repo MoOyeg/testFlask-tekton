@@ -56,7 +56,7 @@ spec:
         name: git-clone
       workspaces:
         - name: output
-          workspace: tekton-repo
+          workspace: tekton-cicd-pvc
     - name: python-unittest
       params:
         - name: PYTHON
@@ -74,7 +74,7 @@ spec:
         name: python-unittest
       workspaces:
         - name: output
-          workspace: tekton-repo
+          workspace: tekton-cicd-pvc
     - name: s2i-build-code
       params:
         - name: VERSION
@@ -92,7 +92,7 @@ spec:
         name: s2i-python
       workspaces:
         - name: source
-          workspace: tekton-repo
+          workspace: tekton-cicd-pvc
     - name: build-dev-env
       params:
         - name: SCRIPT
@@ -163,4 +163,4 @@ spec:
         kind: ClusterTask
         name: openshift-client
   workspaces:
-    - name: tekton-repo
+    - name: tekton-cicd-pvc

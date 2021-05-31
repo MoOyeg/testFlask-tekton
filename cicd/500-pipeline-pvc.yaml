@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: tekton-repo
+  name: tekton-cicd-pvc
 spec:
   accessModes:
     - ReadWriteOnce

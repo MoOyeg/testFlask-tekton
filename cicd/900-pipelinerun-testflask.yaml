@@ -33,6 +33,6 @@ spec:
   serviceAccountName: pipeline
   timeout: 1h0m0s
   workspaces:
-    - name: tekton-repo
+    - name: tekton-cicd-pvc
       persistentVolumeClaim:
-        claimName: tekton-repo
+        claimName: tekton-cicd-pvc
