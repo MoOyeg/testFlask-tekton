@@ -1,0 +1,55 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: pipeline-template
+spec:
+  params:
+    - name: gitrevision
+      description: The git revision
+      default: main
+    - name: gitrepositoryurl
+      description: The git repository url
+    - name: message
+      description: The message to print
+      default: This is the default message
+    - name: contenttype
+      description: The Content-Type of the event
+  resourcetemplates:
+    apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: testflask-pipelinerun-
+      labels:
+        tekton.dev/pipeline: testflask-pipeline
+    spec:
+      params:
+        - name: APP_IMAGE_URL
+          value: appdev/testflask
+        - name: APP_CONFIG
+          value: gunicorn.conf.py
+        - name: APP_NAME
+          value: testflask
+        - name: APP_MODULE
+          value: testapp:app
+        - name: MYSQL_DATABASE
+          value: testdb
+        - name: SECRET_NAME
+          value: my-secret
+        - name: MYSQL_HOST
+          value: mysql
+        - name: NAMESPACE_DEV
+          value: appdev
+        - name: NAMESPACE_PROD
+          value: appprod
+      pipelineRef:
+        name: testflask-pipeline
+      resources:
+        - name: test-git
+          resourceRef:
+            name: git-testflask
+      serviceAccountName: pipeline
+      timeout: 1h0m0s
+      workspaces:
+        - name: tekton-repo
+          persistentVolumeClaim:
+            claimName: tekton-repo

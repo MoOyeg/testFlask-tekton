@@ -1,0 +1,15 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: testflask
+  labels:
+    app: testflask
+    app.kubernetes.io/part-of: testflask
+spec:
+  to:
+    kind: Service
+    name: testflask
+    weight: 100
+  port:
+    targetPort: 8080
+  wildcardPolicy: None

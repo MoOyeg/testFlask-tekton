@@ -4,5 +4,12 @@ namespace: appdev
 commonLabels:
   deploy-env: dev
   editor: kustomize
-bases:
-  - ../../base
+### Don't need dev to build base as it will create a copy of the application in dev which will break the pipeline when the pipeline runs.
+### Pipleine will try to build its own copy in dev to test and will fail when it finds a running copy
+###TODO: Get Pipeline to check if application is already available so it does not fail
+#  - ../../base
+#patchesStrategicMerge:
+#  - patch-is.yaml
+resources:
+  - namespace.yaml
+  - dev-rolebinding.yaml

@@ -1,0 +1,66 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  annotations:
+    app.openshift.io/connects-to: mysql
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"testflask:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"testflask\")].image"}]
+  name: testflask
+  namespace: appprod
+  labels:
+    app: testflask
+    app.kubernetes.io/part-of: testflask
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testflask
+      deployment: testflask
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: testflask
+        deployment: testflask
+    spec:
+      containers:
+        - name: testflask
+          image: testflask:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: APP_CONFIG
+              value: gunicorn.conf.py
+            - name: APP_MODULE
+              value: "testapp:app"
+            - name: MYSQL_DATABASE
+              value: testdb
+            - name: MYSQL_HOST
+              value: mysql
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: MYSQL_USER
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600

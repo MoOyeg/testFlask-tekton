@@ -1,0 +1,6 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: testflask
+status:
+  dockerImageRepository: image-registry.openshift-image-registry.svc:5000/appprod/testflask

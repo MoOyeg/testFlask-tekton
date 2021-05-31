@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: 1234-tekton
+resources:
+  - 100-namespace.yaml
+  - 200-pipeline-service-role.yaml
+  - 300-pipeline-serviceaccount.yaml
+  - 400-pipeline-service-rolebinding.yaml
+  - 500-pipeline-pvc.yaml
+  - 500-pipelineresource-git.yaml
+  - 600-eventlistener.yaml
+  - 600-messagebinding.yaml
+  - 600-triggerbinding.yaml
+  - 600-triggertemplate.yaml
+  - 500-task-python-unittest.yaml
+  - 900-pipelinerun-testflask.yaml

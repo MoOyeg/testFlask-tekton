@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    app.openshift.io/vcs-uri: https://github.com/MoOyeg/testFlask-tekton.git?ref=main
+  creationTimestamp: null
+  name: appprod
+spec: {}
+status: {}
