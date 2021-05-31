@@ -53,4 +53,4 @@ spec:
         workspaces:
           - name: testflask-cicd-pvc
             persistentVolumeClaim:
-              claimName: tekton-cicd-pvc
+              claimName: testflask-cicd-pvc

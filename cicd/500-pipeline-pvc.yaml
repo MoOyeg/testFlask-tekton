@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: tekton-cicd-pvc
+  name: testflask-cicd-pvc
 spec:
   accessModes:
     - ReadWriteOnce

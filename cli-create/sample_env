@@ -20,4 +20,4 @@ export JENKINS_NAMESPACE="1234-jenkins"
 
 #Tekton
 export TEKTON_NAMESPACE="1234-tekton"
-export TEKTON_PVC_NAME=tekton-cicd-pvc
+export TEKTON_PVC_NAME=testflask-cicd-pvc
