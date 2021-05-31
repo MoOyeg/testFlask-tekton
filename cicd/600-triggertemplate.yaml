@@ -51,6 +51,6 @@ spec:
         serviceAccountName: pipeline
         timeout: 1h0m0s
         workspaces:
-          - name: testflask-repo
+          - name: testflask-cicd-pvc
             persistentVolumeClaim:
               claimName: tekton-cicd-pvc
