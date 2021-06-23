@@ -1,14 +1,16 @@
----
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
-metadata:
-  name: listener
+metadata:  
+  name: testflask-listener
 spec:
   serviceAccountName: pipeline
   triggers:
-    - name: foo-trig
-      bindings:
-        - ref: pipeline-binding
-        - ref: message-binding
+    - bindings:
+        - kind: TriggerBinding
+          ref: pipeline-binding
+        - kind: TriggerBinding
+          ref: message-binding
+      name: my-trigger
       template:
         ref: pipeline-template
+
