@@ -1,81 +1,90 @@
-# testFlask-tekton
-Sample Tekton Pipeline for a Flask Python Application<br/>
-Pre-Requisites: Install Openshift Pipelines Operator:https://docs.openshift.com/container-platform/4.6/pipelines/installing-pipelines.html<br/>
+# testFlask-tekton  
 
-Application will show how we can use Tekton to deploy/test a flask application running on openshift, the Application being used is [testFlask](https://github.com/MoOyeg/testFlask.git)<br/>
-Environment variables used in Commands have samples in the sample_env file.<br/>
-So this example assumes a pipeline scenario where there is a running production application represented by our Production Project ```$NAMESPACE_PROD``` and at build time we deploy the same exact infrastructure in our devlopment project ```($NAMESPACE_DEV)``` and test the code, when all satisfied we promote our dev image to production which is automatically deployed based on a trigger from our imagestream.
+Sample Tekton Pipeline for a Flask Python Application  
+Pre-Requisites: Install Openshift Pipelines Operator:https://docs.openshift.com/container-platform/4.6/pipelines/installing-pipelines.html  
 
-### Steps to Run via Kustomize<br/>
-1 **Create Dev Environment**<br/>
-```oc apply -k ./overlays/dev```<br/>
+Application will show how we can use Tekton to deploy/test a flask application running on openshift, the Application being used is [testFlask](https://github.com/MoOyeg/testFlask.git)  
+Environment variables used in Commands have samples in the sample_env file.  
+So this example assumes a pipeline scenario where there is a running production application represented by our Production Project ```$NAMESPACE_PROD``` and at build time we deploy the same exact infrastructure in our devlopment project ```($NAMESPACE_DEV)``` and test the code, when all satisfied we promote our dev image to production which is automatically deployed based on a trigger from our imagestream.  
 
-2 **Create Prod Environment**<br/>
-```oc apply -k ./overlays/prod```<br/>
+## Steps to Run via Kustomize  
 
-3 **Create CICD Environment**<br/>
-``` kustomize build ./cicd | oc create -f -```<br/>
+1 **Create Dev Environment**  
+```oc apply -k ./overlays/dev```  
 
-To use the eventlistener remember to create a webhook<br/>
+2 **Create Prod Environment**  
+```oc apply -k ./overlays/prod```  
+
+3 **Create CICD Environment**  
+``` kustomize build ./cicd | oc create -f -```   
+
+To use the eventlistener remember to create a webhook  
+
+PipelineRun will start in pending, re-run to start run
 
 ----------------------------------------------------------------------------------
 
-### Steps to Run via oc/kubectl commands<br/>
-1 **Source Sample Environment**<br/>
-```eval "$(curl https://raw.githubusercontent.com/MoOyeg/testFlask/master/sample_env)"```<br/>
+### Steps to Run via oc/kubectl commands  
 
-2 **Create a new project for Tekton Pipeline**<br/>
-```oc new-project $TEKTON_NAMESPACE```<br/>
+1 **Source Sample Environment**  
+```eval "$(curl https://raw.githubusercontent.com/MoOyeg/testFlask/master/sample_env)"```  
 
-3 **Create prod and test projects for your pipeline**<br/>
-  - Create Projects <br/>
-  ```oc new-project $NAMESPACE_DEV```<br/>
-  ```oc new-project $NAMESPACE_PROD```<br/>
-  
-  - Give Permissions to Tekton Pipeline User on Test and Prod Namespaces so we can build in those namespaces<br/>
-  ```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $NAMESPACE_DEV```<br/>
-  ```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $NAMESPACE_PROD```<br/>
-  ```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $TEKTON_NAMESPACE```<br/>
+2 **Create a new project for Tekton Pipeline**  
+```oc new-project $TEKTON_NAMESPACE```  
 
-  - Create our Infrastructure Secret in our Development and Production<br/>
-  ```oc create secret generic ${SECRET_NAME} --from-literal=MYSQL_USER=$MYSQL_USER --from-literal=MYSQL_PASSWORD=$MYSQL_PASSWORD -n $NAMESPACE_DEV```<br/>
-  ```oc create secret generic ${SECRET_NAME} --from-literal=MYSQL_USER=$MYSQL_USER --from-literal=MYSQL_PASSWORD=$MYSQL_PASSWORD -n $NAMESPACE_PROD```<br/>
+3 **Create prod and test projects for your pipeline**  
+
+- Create Projects  
+  ```oc new-project $NAMESPACE_DEV```  
+  ```oc new-project $NAMESPACE_PROD```  
   
-  - Create our Database in Production<br/>
-  ```oc new-app $MYSQL_HOST --env=MYSQL_DATABASE=$MYSQL_DATABASE -l db=${MYSQL_HOST} -l app=${APP_NAME} --as-deployment-config=true -n ${NAMESPACE_PROD}```<br/>
+  - Give Permissions to Tekton Pipeline User on Test and Prod Namespaces so we can build in those namespaces  
+  ```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $NAMESPACE_DEV```  
+  ```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $NAMESPACE_PROD```  
+  ```oc adm policy add-cluster-role-to-user admin system:serviceaccount:$TEKTON_NAMESPACE:pipeline -n $TEKTON_NAMESPACE```  
+
+  - Create our Infrastructure Secret in our Development and Production  
+  ```oc create secret generic ${SECRET_NAME} --from-literal=MYSQL_USER=$MYSQL_USER --from-literal=MYSQL_PASSWORD=$MYSQL_PASSWORD -n $NAMESPACE_DEV```  
+  ```oc create secret generic ${SECRET_NAME} --from-literal=MYSQL_USER=$MYSQL_USER --from-literal=MYSQL_PASSWORD=$MYSQL_PASSWORD -n $NAMESPACE_PROD```  
   
-  - Set our Secret on the Production Database<br/>
-  ```oc set env dc/$MYSQL_HOST --from=secret/${SECRET_NAME} -n $NAMESPACE_PROD```<br/>
-   
-  - Create our Production Application<br/>
-  ```oc new-app ${CODE_URL} --name=$APP_NAME -l app=${APP_NAME} --strategy=source --env=APP_CONFIG=${APP_CONFIG} --env=APP_MODULE=${APP_MODULE} --env=MYSQL_HOST=$MYSQL_HOST --env=MYSQL_DATABASE=$MYSQL_DATABASE --as-deployment-config=true -n $NAMESPACE_PROD```<br/>
+  - Create our Database in Production  
+  ```oc new-app $MYSQL_HOST --env=MYSQL_DATABASE=$MYSQL_DATABASE -l db=${MYSQL_HOST} -l app=${APP_NAME} --as-deployment-config=true -n ${NAMESPACE_PROD}```  
   
-  - Set our Secret on the Production Application<br/>
-  ```oc set env dc/$APP_NAME --from=secret/${SECRET_NAME} -n $NAMESPACE_PROD```
- 
-  - Expose our Production Application to the External World<br/>
+  - Set our Secret on the Production Database  
+  ```oc set env dc/$MYSQL_HOST --from=secret/${SECRET_NAME} -n $NAMESPACE_PROD```  
+
+  - Create our Production Application  
+  ```oc new-app ${CODE_URL} --name=$APP_NAME -l app=${APP_NAME} --strategy=source --env=APP_CONFIG=${APP_CONFIG} --env=APP_MODULE=${APP_MODULE} --env=MYSQL_HOST=$MYSQL_HOST --env=MYSQL_DATABASE=$MYSQL_DATABASE --as-deployment-config=true -n $NAMESPACE_PROD```  
+  
+  - Set our Secret on the Production Application  
+  ```oc set env dc/$APP_NAME --from=secret/${SECRET_NAME} -n $NAMESPACE_PROD```  
+
+  - Expose our Production Application to the External World  
   ```oc expose svc/$APP_NAME -n $NAMESPACE_PROD```
   
-  - Label our Projects for the Development Console<br/>
-  ```
+  - Label our Projects for the Development Console  
+
+  ``` console
      oc label dc/$APP_NAME app.kubernetes.io/part-of=$APP_NAME -n $NAMESPACE_PROD
      oc label dc/$MYSQL_HOST app.kubernetes.io/part-of=$APP_NAME -n $NAMESPACE_PROD
      oc annotate dc/$APP_NAME app.openshift.io/connects-to=$MYSQL_HOST -n $NAMESPACE_PROD
   ```
 
-4 **Create Pipeline Components**<br/>
-  - Create PVC for Tekton Workspace<br/>
-    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipeline-pvc.yaml | envsubst | oc create -f -```<br/>
+4 **Create Pipeline Components**  
 
-  - Create custom task<br/>
-    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/task-python-unittest.yaml | envsubst '$TEKTON_NAMESPACE' | oc create -f -```<br/>
+- Create PVC for Tekton Workspace  
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipeline-pvc.yaml | envsubst | oc create -f -```  
 
-  - Create Resources<br/>
-    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipelineresource-git.yaml | envsubst | oc create -f -```<br/>
+  - Create custom task  
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/task-python-unittest.yaml | envsubst '$TEKTON_NAMESPACE' | oc create -f -```  
 
-  - Create Pipeline<br/>
-    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipeline-testflask.yaml | envsubst | oc create -f -```<br/>
+  - Create Resources  
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipelineresource-git.yaml | envsubst | oc create -f -```  
 
-5 **Start Pipeline Execution by Creating PipelineRun**<br/>
-  - Create PipelineRun<br/>
-   ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipelinerun-testflask.yaml | envsubst | oc create -f -```<br/>
+  - Create Pipeline  
+    ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipeline-testflask.yaml | envsubst | oc create -f -```  
+
+5 **Start Pipeline Execution by Creating PipelineRun**  
+
+- Create PipelineRun  
+   ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipelinerun-testflask.yaml | envsubst | oc create -f -```  
