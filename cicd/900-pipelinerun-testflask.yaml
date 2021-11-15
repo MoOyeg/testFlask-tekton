@@ -5,6 +5,8 @@ metadata:
   labels:
     tekton.dev/pipeline: testflask-pipeline
 spec:
+  #Creating PipelineRun as Pending
+  status: "PipelineRunPending"
   params:
     - name: APP_IMAGE_URL
       value: appdev/testflask
