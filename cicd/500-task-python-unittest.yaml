@@ -5,7 +5,7 @@ metadata:
 spec:
   description: This task can be used to run unit tests for python.
   params:
-    - default: latest
+    - default: 3.6.15
       description: "The used Python version, more precisely the tag for the Python image"
       name: PYTHON
       type: string

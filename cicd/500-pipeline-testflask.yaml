@@ -60,7 +60,7 @@ spec:
     - name: python-unittest
       params:
         - name: PYTHON
-          value: latest
+          value: 3.6.15
         - name: TEST_FILE
           value: test.py
         - name: REQUIREMENTS_FILE
@@ -120,8 +120,8 @@ spec:
       runAfter:
         - s2i-build-code
       taskRef:
-        kind: ClusterTask
-        name: openshift-client
+        kind: Task
+        name: openshift-client-custom-1-0
     - name: tag-dev-prod
       params:
         - name: SCRIPT
@@ -139,8 +139,8 @@ spec:
       runAfter:
         - build-dev-env
       taskRef:
-        kind: ClusterTask
-        name: openshift-client
+        kind: Task
+        name: openshift-client-custom-1-0
     - name: cleanup-dev-env
       params:
         - name: SCRIPT
@@ -160,7 +160,7 @@ spec:
       runAfter:
         - tag-dev-prod
       taskRef:
-        kind: ClusterTask
-        name: openshift-client
+        kind: Task
+        name: openshift-client-custom-1-0
   workspaces:
     - name: testflask-cicd-pvc
