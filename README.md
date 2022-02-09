@@ -1,11 +1,16 @@
 # testFlask-tekton  
 
 Sample Tekton Pipeline for a Flask Python Application  
-Pre-Requisites: Install Openshift Pipelines Operator:https://docs.openshift.com/container-platform/4.6/pipelines/installing-pipelines.html  
 
 Application will show how we can use Tekton to deploy/test a flask application running on openshift, the Application being used is [testFlask](https://github.com/MoOyeg/testFlask.git)  
 Environment variables used in Commands have samples in the sample_env file.  
-So this example assumes a pipeline scenario where there is a running production application represented by our Production Project ```$NAMESPACE_PROD``` and at build time we deploy the same exact infrastructure in our devlopment project ```($NAMESPACE_DEV)``` and test the code, when all satisfied we promote our dev image to production which is automatically deployed based on a trigger from our imagestream.  
+So this example assumes a pipeline scenario where there is a running production application represented by our Production Project and at build time we deploy the same exact infrastructure in our devlopment project and test the code, when all satisfied we promote our dev image to production which is automatically deployed based on a trigger from our imagestream.  
+
+## Pre-Requisites:  
+
+Install Openshift Pipelines Operator    
+https://docs.openshift.com/container-platform/4.6/pipelines/installing-pipelines.html  
+ 
 
 ## Steps to Run via Kustomize  
 
@@ -21,12 +26,13 @@ So this example assumes a pipeline scenario where there is a running production 
 3 **Create CICD Environment with ACS**  
 ```kustomize build ./cicd/overlays/secure | sed -e 's/name: testflask-pipelinerun/# name: testflask-pipelinerun/' | oc create -f -```  
 
-Remember to create the roxctl secret with credentials(Might be able to use below)
+### Notes
+Remember to create the roxctl secret with credentials,if you are deploying ACS tasks(Might be able to use below)  
 ```kustomize build ./cicd/overlays/secure/pipelines-and-secrets```
 
 To use the eventlistener remember to create a webhook  
 
-PipelineRun will start in pending, re-run to start run
+PipelineRun will start in pending, re-run to start Build
 
 ----------------------------------------------------------------------------------
 <!---
