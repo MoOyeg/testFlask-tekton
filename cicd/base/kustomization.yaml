@@ -3,13 +3,13 @@ kind: Kustomization
 namespace: 1234-tekton
 resources:
   - 100-namespace.yaml
-  - 200-pipeline-service-role.yaml
+  #  - 200-pipeline-service-role.yaml
   - 300-pipeline-serviceaccount.yaml
   - 400-pipeline-service-rolebinding.yaml
   - 500-pipeline-pvc.yaml
   - 500-openshift-client-custom-1-0.yaml
   - 500-pipelineresource-git.yaml
-  - 500-pipeline-testflask.yaml
+  #  - 500-pipeline-testflask.yaml
   - 600-eventlistener.yaml
   - 600-messagebinding.yaml
   - 600-triggerbinding.yaml
@@ -17,10 +17,11 @@ resources:
   - 700-listener-route.yaml
   - 500-task-python-unittest.yaml
   - 900-pipelinerun-testflask.yaml
-patchesJson6902:
-  - path: patches/patch-generatename.yaml
-    target:
-      group: tekton.dev
-      version: v1beta1
-      kind: PipelineRun
-      name: testflask-pipelinerun
+#Broken in new release https://github.com/kubernetes-sigs/kustomize/issues/641
+#patchesJson6902:
+#  - path: patches/patch-generatename.yaml
+#    target:
+#      group: tekton.dev
+#      version: v1beta1
+#      kind: PipelineRun
+#      name: testflask-pipelinerun

@@ -2,6 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: testflask-pipeline
+  namespace: 1234-tekton
 spec:
   params:
     - default: ""
@@ -31,16 +32,21 @@ spec:
     - default: ""
       name: NAMESPACE_PROD
       type: string
-  resources:
-    - name: test-git
-      type: git
+    - name: GIT_URL
+      type: string
+    - name: GIT_BRANCH
+      type: string
+    - name: PYTHON_VERSION
+      type: string
+    - name: OUTPUT_IMAGE
+      type: string
   tasks:
     - name: git-clone-code
       params:
         - name: url
-          value: "https://github.com/MoOyeg/testFlask.git"
+          value: "$(params.GIT_URL)"
         - name: revision
-          value: master
+          value: "$(params.GIT_BRANCH)"
         - name: submodules
           value: "true"
         - name: depth
@@ -60,7 +66,7 @@ spec:
     - name: python-unittest
       params:
         - name: PYTHON
-          value: 3.6.15
+          value: $(params.PYTHON_VERSION)
         - name: TEST_FILE
           value: test.py
         - name: REQUIREMENTS_FILE
@@ -83,8 +89,10 @@ spec:
           value: src
         - name: TLSVERIFY
           value: "false"
+        - name: OUTPUT_TAG
+          value:
         - name: IMAGE
-          value: "image-registry.openshift-image-registry.svc:5000/appdev/testflask"
+          value: "$(params.OUTPUT_IMAGE)"
       runAfter:
         - python-unittest
       taskRef:
@@ -93,6 +101,34 @@ spec:
       workspaces:
         - name: source
           workspace: testflask-cicd-pvc
+    - name: rox-image-scan
+      params:
+        - name: rox_api_token
+          value: roxsecrets
+        - name: rox_central_endpoint
+          value: roxsecrets
+        - name: output_format
+          value: json
+        - name: image
+          value: "$(params.OUTPUT_IMAGE)"
+      runAfter:
+        - s2i-build-code
+      taskRef:
+        kind: ClusterTask
+        name: rox-image-scan
+    - name: rox-image-check
+      params:
+        - name: image
+          value: $(params.OUTPUT_IMAGE)
+        - name: rox_api_token
+          value: roxsecrets
+        - name: rox_central_endpoint
+          value: roxsecrets
+      taskRef:
+        name: rox-image-check
+        kind: ClusterTask
+      runAfter:
+        - rox-image-scan
     - name: build-dev-env
       params:
         - name: SCRIPT
@@ -113,12 +149,8 @@ spec:
             - $(params.APP_CONFIG)
             - $(params.APP_MODULE)
             - $(params.APP_IMAGE_URL)
-      resources:
-        inputs:
-          - name: source
-            resource: test-git
       runAfter:
-        - s2i-build-code
+        - rox-image-check
       taskRef:
         kind: Task
         name: openshift-client-custom-1-0
@@ -132,10 +164,6 @@ spec:
             - $(params.APP_NAME)
             - $(params.NAMESPACE_DEV)
             - $(params.NAMESPACE_PROD)
-      resources:
-        inputs:
-          - name: source
-            resource: test-git
       runAfter:
         - build-dev-env
       taskRef:
@@ -153,10 +181,6 @@ spec:
             - $(params.MYSQL_HOST)
             - $(params.NAMESPACE_DEV)
             - $(params.APP_NAME)
-      resources:
-        inputs:
-          - name: source
-            resource: test-git
       runAfter:
         - tag-dev-prod
       taskRef:

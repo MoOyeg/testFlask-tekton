@@ -1,0 +1,320 @@
+{
+    "apiVersion": "tekton.dev/v1beta1",
+    "kind": "Pipeline",
+    "metadata": {
+        "name": "testflask-pipeline",
+        "namespace": "1234-tekton"
+    },
+    "spec": {
+        "params": [
+            {
+                "default": "",
+                "name": "APP_IMAGE_URL",
+                "type": "string"
+            },
+            {
+                "default": "",
+                "name": "APP_CONFIG",
+                "type": "string"
+            },
+            {
+                "default": "",
+                "name": "APP_NAME",
+                "type": "string"
+            },
+            {
+                "default": "",
+                "name": "APP_MODULE",
+                "type": "string"
+            },
+            {
+                "default": "",
+                "name": "MYSQL_DATABASE",
+                "type": "string"
+            },
+            {
+                "default": "",
+                "name": "SECRET_NAME",
+                "type": "string"
+            },
+            {
+                "default": "",
+                "name": "MYSQL_HOST",
+                "type": "string"
+            },
+            {
+                "default": "",
+                "name": "NAMESPACE_DEV",
+                "type": "string"
+            },
+            {
+                "default": "",
+                "name": "NAMESPACE_PROD",
+                "type": "string"
+            },
+            {
+                "name": "GIT_URL",
+                "type": "string"
+            },
+            {
+                "name": "GIT_BRANCH",
+                "type": "string"
+            },
+            {
+                "name": "PYTHON_VERSION",
+                "type": "string"
+            },
+            {
+                "name": "OUTPUT_IMAGE",
+                "type": "string"
+            }
+        ],
+        "tasks": [
+            {
+                "name": "git-clone-code",
+                "params": [
+                    {
+                        "name": "url",
+                        "value": "$(params.GIT_URL)"
+                    },
+                    {
+                        "name": "revision",
+                        "value": "$(params.GIT_BRANCH)"
+                    },
+                    {
+                        "name": "submodules",
+                        "value": "true"
+                    },
+                    {
+                        "name": "depth",
+                        "value": "1"
+                    },
+                    {
+                        "name": "sslVerify",
+                        "value": "true"
+                    },
+                    {
+                        "name": "subdirectory",
+                        "value": "src"
+                    },
+                    {
+                        "name": "deleteExisting",
+                        "value": "true"
+                    }
+                ],
+                "taskRef": {
+                    "kind": "ClusterTask",
+                    "name": "git-clone"
+                },
+                "workspaces": [
+                    {
+                        "name": "output",
+                        "workspace": "testflask-cicd-pvc"
+                    }
+                ]
+            },
+            {
+                "name": "python-unittest",
+                "params": [
+                    {
+                        "name": "PYTHON",
+                        "value": "$(params.PYTHON_VERSION)"
+                    },
+                    {
+                        "name": "TEST_FILE",
+                        "value": "test.py"
+                    },
+                    {
+                        "name": "REQUIREMENTS_FILE",
+                        "value": "requirements.txt"
+                    },
+                    {
+                        "name": "SOURCE_PATH",
+                        "value": "src"
+                    }
+                ],
+                "runAfter": [
+                    "git-clone-code"
+                ],
+                "taskRef": {
+                    "kind": "Task",
+                    "name": "python-unittest"
+                },
+                "workspaces": [
+                    {
+                        "name": "output",
+                        "workspace": "testflask-cicd-pvc"
+                    }
+                ]
+            },
+            {
+                "name": "s2i-build-code",
+                "params": [
+                    {
+                        "name": "VERSION",
+                        "value": "3.8-ubi8"
+                    },
+                    {
+                        "name": "PATH_CONTEXT",
+                        "value": "src"
+                    },
+                    {
+                        "name": "TLSVERIFY",
+                        "value": "false"
+                    },
+                    {
+                        "name": "IMAGE",
+                        "value": "$(params.OUTPUT_IMAGE)"
+                    }
+                ],
+                "runAfter": [
+                    "python-unittest"
+                ],
+                "taskRef": {
+                    "kind": "ClusterTask",
+                    "name": "s2i-python"
+                },
+                "workspaces": [
+                    {
+                        "name": "source",
+                        "workspace": "testflask-cicd-pvc"
+                    }
+                ]
+            },
+            {
+                "name": "rox-image-scan",
+                "params": [
+                    {
+                        "name": "rox_api_token",
+                        "value": "roxsecrets"
+                    },
+                    {
+                        "name": "rox_central_endpoint",
+                        "value": "roxsecrets"
+                    },
+                    {
+                        "name": "output_format",
+                        "value": "json"
+                    },
+                    {
+                        "name": "image",
+                        "value": "$(params.OUTPUT_IMAGE)"
+                    }
+                ],
+                "runAfter": [
+                    "s2i-build-code"
+                ],
+                "taskRef": {
+                    "kind": "ClusterTask",
+                    "name": "rox-image-scan"
+                }
+            },
+            {
+                "name": "rox-image-check",
+                "params": [
+                    {
+                        "name": "image",
+                        "value": "$(params.OUTPUT_IMAGE)"
+                    },
+                    {
+                        "name": "rox_api_token",
+                        "value": "roxsecrets"
+                    },
+                    {
+                        "name": "rox_central_endpoint",
+                        "value": "roxsecrets"
+                    }
+                ],
+                "runAfter": [
+                    "rox-image-scan"
+                ],
+                "taskRef": {
+                    "kind": "ClusterTask",
+                    "name": "rox-image-check"
+                }
+            },
+            {
+                "name": "build-dev-env",
+                "params": [
+                    {
+                        "name": "SCRIPT",
+                        "value": "oc new-app $1 --env=MYSQL_DATABASE=$2 -l db=$1 -l app=$3 -n $4 --as-deployment-config=true;  oc expose svc/$1 -n $4; oc set env dc/$1 --from=secret/$5 -n $4; oc label dc/$1 app=$3 --overwrite=true -n $4; oc new-app --image-stream $8 --name $3 --env=APP_CONFIG=$6 --env=APP_MODULE=$7 --env=MYSQL_HOST=$1 --env=MYSQL_DB=$2 --as-deployment-config=true -n $4; oc expose svc/$3 -n $4"
+                    },
+                    {
+                        "name": "ARGS",
+                        "value": [
+                            "$(params.MYSQL_HOST)",
+                            "$(params.MYSQL_DATABASE)",
+                            "$(params.APP_NAME)",
+                            "$(params.NAMESPACE_DEV)",
+                            "$(params.SECRET_NAME)",
+                            "$(params.APP_CONFIG)",
+                            "$(params.APP_MODULE)",
+                            "$(params.APP_IMAGE_URL)"
+                        ]
+                    }
+                ],
+                "runAfter": [
+                    "rox-image-check"
+                ],
+                "taskRef": {
+                    "kind": "Task",
+                    "name": "openshift-client-custom-1-0"
+                }
+            },
+            {
+                "name": "tag-dev-prod",
+                "params": [
+                    {
+                        "name": "SCRIPT",
+                        "value": "oc tag $2/$1:latest $3/$1:latest"
+                    },
+                    {
+                        "name": "ARGS",
+                        "value": [
+                            "$(params.APP_NAME)",
+                            "$(params.NAMESPACE_DEV)",
+                            "$(params.NAMESPACE_PROD)"
+                        ]
+                    }
+                ],
+                "runAfter": [
+                    "build-dev-env"
+                ],
+                "taskRef": {
+                    "kind": "Task",
+                    "name": "openshift-client-custom-1-0"
+                }
+            },
+            {
+                "name": "cleanup-dev-env",
+                "params": [
+                    {
+                        "name": "SCRIPT",
+                        "value": "oc delete dc/$1 -n $2 || true ; oc delete svc/$1 -n $2 || true ; oc delete route/$1 -n $2 || true; oc delete dc/$3 -n $2 || true; oc delete svc/$3 -n $2 || true;oc delete route/$3 -n $2"
+                    },
+                    {
+                        "name": "ARGS",
+                        "value": [
+                            "$(params.MYSQL_HOST)",
+                            "$(params.NAMESPACE_DEV)",
+                            "$(params.APP_NAME)"
+                        ]
+                    }
+                ],
+                "runAfter": [
+                    "tag-dev-prod"
+                ],
+                "taskRef": {
+                    "kind": "Task",
+                    "name": "openshift-client-custom-1-0"
+                }
+            }
+        ],
+        "workspaces": [
+            {
+                "name": "testflask-cicd-pvc"
+            }
+        ]
+    }
+}

@@ -15,15 +15,21 @@ So this example assumes a pipeline scenario where there is a running production 
 2 **Create Prod Environment**  
 ```oc apply -k ./overlays/prod```  
 
-3 **Create CICD Environment**  
-``` kustomize build ./cicd | oc create -f -```   
+3 **Create CICD Environment without ACS**  
+```kustomize build ./cicd/overlays/simple | sed -e 's/name: testflask-pipelinerun/# name: testflask-pipelinerun/' | oc create -f -```  
+
+3 **Create CICD Environment with ACS**  
+```kustomize build ./cicd/overlays/secure | sed -e 's/name: testflask-pipelinerun/# name: testflask-pipelinerun/' | oc create -f -```  
+
+Remember to create the roxctl secret with credentials(Might be able to use below)
+```kustomize build ./cicd/overlays/secure/pipelines-and-secrets```
 
 To use the eventlistener remember to create a webhook  
 
 PipelineRun will start in pending, re-run to start run
 
 ----------------------------------------------------------------------------------
-
+<!---
 ### Steps to Run via oc/kubectl commands  
 
 1 **Source Sample Environment**  

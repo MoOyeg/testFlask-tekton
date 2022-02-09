@@ -1,0 +1,10 @@
+#https://github.com/pittar-gitops/gitops-mono-repo-admins/blob/main/03-cluster-services/08-advanced-cluster-security/pipelines-and-secrets/kustomization.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - pipeline-rbac.yaml
+  - stackrox-ci-secrets-task.yaml
+  - token-secret-pipeline.yaml
+  - token-secret-pipelinerun.yaml

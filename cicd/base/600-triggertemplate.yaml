@@ -18,8 +18,8 @@ spec:
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
       metadata:
+        name: testflask-pipelinerun
         generateName: testflask-pipelinerun-
-        namespace: 1234-tekton
         labels:
           tekton.dev/pipeline: testflask-pipeline
       spec:
@@ -42,12 +42,16 @@ spec:
             value: appdev
           - name: NAMESPACE_PROD
             value: appprod
+          - name: GIT_URL
+            value: https://github.com/MoOyeg/testFlask.git
+          - name: GIT_BRANCH
+            value: master
+          - name: PYTHON_VERSION
+            value: 3.6.15
+          - name: OUTPUT_IMAGE
+            value: image-registry.openshift-image-registry.svc:5000/appdev/testflask:latest
         pipelineRef:
           name: testflask-pipeline
-        resources:
-          - name: test-git
-            resourceRef:
-              name: git-testflask
         serviceAccountName: pipeline
         timeout: 1h0m0s
         workspaces:
