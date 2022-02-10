@@ -1,0 +1,60 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-info
+spec:
+  description: This task is used to get git information from cloned source code made available to the pipeline. Note will set tag to last release tag if present commit does not match tag
+  params:
+    - name: BASE_IMAGE
+      description: |
+        The base image for the task.
+      type: string
+      default: docker.io/bitnami/git:2.35.1-debian-10-r10
+    - default: .
+      description: The path to the source code
+      name: SOURCE_PATH
+      type: string
+  results:
+    - name: longcommit
+      description: The full commit SHA after the git operation.
+    - name: shortcommit
+      description: The short commit SHA after the git operation.
+    - name: author
+      description: Author of this commit
+    - name: message
+      description: Commit Message
+    - name: tag
+      description: Release tag for this commit
+
+  steps:
+    - image: "$(inputs.params.BASE_IMAGE)"
+      name: python-unittest
+      resources: {}
+      script: |
+        export PATH=$PATH:$HOME/.local/bin
+
+
+        LONGCOMMIT=$(git log -1 | head -n 1 | cut -d " " -f2)
+        printf "%s" "${LONGCOMMIT}" > $(results.longcommit.path)
+
+        SHORTCOMMIT=$(git show --oneline -s | cut -d " " -f1)
+        printf "%s" "${SHORTCOMMIT}" > $(results.shortcommit.path)        
+
+        AUTHOR=$(git log -1 | grep -i author | sed -e 's/Author: \(.*\)/\1/g')
+        printf "%s" "${AUTHOR}" > $(results.author.path)
+
+        MESSAGE=$(git show --oneline -s | cut -d " " -f2-)
+        printf "%s" "${MESSAGE}" > $(results.message.path)
+
+        TAG=$(git tag --contains $SHORTCOMMIT -l)
+        if [ "${TAG}" = "" ] ; then
+           #TAG="$(git tag -l | tail -n -1)"
+           TAG=$(git show-ref --tags | tail -n -1 | cut -d " " -f2- | cut -d "/" -f3)
+        fi
+        if [ "${TAG}" = "" ] ; then
+           TAG="$SHORTCOMMIT"
+        fi
+        printf "%s" "${TAG}" > $(results.tag.path)
+      workingDir: $(workspaces.source.path)/$(inputs.params.SOURCE_PATH)
+  workspaces:
+    - name: source

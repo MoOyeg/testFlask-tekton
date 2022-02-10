@@ -1,40 +1,51 @@
-# testFlask-tekton  
+# testFlask-tekton
 
-Sample Tekton Pipeline for a Flask Python Application  
+Sample Tekton Pipeline for a Flask Python Application
 
 Application will show how we can use Tekton to deploy/test a flask application running on openshift, the Application being used is [testFlask](https://github.com/MoOyeg/testFlask.git)  
 Environment variables used in Commands have samples in the sample_env file.  
-So this example assumes a pipeline scenario where there is a running production application represented by our Production Project and at build time we deploy the same exact infrastructure in our devlopment project and test the code, when all satisfied we promote our dev image to production which is automatically deployed based on a trigger from our imagestream.  
+So this example assumes a pipeline scenario where there is a running production application represented by our Production Project and at build time we deploy the same exact infrastructure in our devlopment project and test the code, when all satisfied we promote our dev image to production which is automatically deployed based on a trigger from our imagestream.
 
-## Pre-Requisites:  
+## Pre-Requisites:
 
-Install Openshift Pipelines Operator    
-https://docs.openshift.com/container-platform/4.6/pipelines/installing-pipelines.html  
- 
+Install Openshift Pipelines Operator  
+https://docs.openshift.com/container-platform/4.6/pipelines/installing-pipelines.html
 
-## Steps to Run via Kustomize  
+## Steps to Run via Kustomize
 
-1 **Create Dev Environment**  
-```oc apply -k ./overlays/dev```  
+### 1 Create Dev Environment
 
-2 **Create Prod Environment**  
-```oc apply -k ./overlays/prod```  
+`oc apply -k ./overlays/dev`
 
-3 **Create CICD Environment without ACS**  
-```kustomize build ./cicd/overlays/simple | sed -e 's/name: testflask-pipelinerun/# name: testflask-pipelinerun/' | oc create -f -```  
+### 2 Create Prod Environment
 
-3 **Create CICD Environment with ACS**  
-```kustomize build ./cicd/overlays/secure | sed -e 's/name: testflask-pipelinerun/# name: testflask-pipelinerun/' | oc create -f -```  
+`oc apply -k ./overlays/prod`
+
+### 3 Create CICD Environment
+
+Respository provides examples on how to deploy a normal tekton CICD Pipeline and a version that provides Image Scanning and Policy Checking using Red hat's Advanced Cluster Security Product.
+
+**_Deploy pipeline without scanning and security_**  
+`kustomize build ./cicd/overlays/simple | sed -e 's/name: testflask-pipelinerun/# name: testflask-pipelinerun/' | oc create -f -`
+
+**_Create CICD Environment with ACS_**  
+Please see Notes below before running this command  
+`kustomize build ./cicd/overlays/secure | sed -e 's/name: testflask-pipelinerun/# name: testflask-pipelinerun/' | oc create -f -`
 
 ### Notes
-Remember to create the roxctl secret with credentials,if you are deploying ACS tasks(Might be able to use below)  
-```kustomize build ./cicd/overlays/secure/pipelines-and-secrets```
 
-To use the eventlistener remember to create a webhook  
+1 If using the internal openshift registry ACS requires integration to the internal openshift registry and access to pull.You can try using the below command to create this(This might not be updated).  
+ `kustomize build ./cicd/overlays/secure/acs/pipelines-and-secrets | oc create -f -`
+
+2 ACS roxctl requires a secret that contains the Central cluster url and the API Token.You can try using the below command to create this(This might not be updated).  
+`kustomize build ./cicd/overlays/secure/acs/pipelines-and-secrets | oc create -f -`
+
+To use the eventlistener remember to create a webhook
 
 PipelineRun will start in pending, re-run to start Build
 
-----------------------------------------------------------------------------------
+---
+
 <!---
 ### Steps to Run via oc/kubectl commands  
 
@@ -99,4 +110,4 @@ PipelineRun will start in pending, re-run to start Build
 5 **Start Pipeline Execution by Creating PipelineRun**  
 
 - Create PipelineRun  
-   ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipelinerun-testflask.yaml | envsubst | oc create -f -```  
+   ```curl https://raw.githubusercontent.com/MoOyeg/testFlask-tekton/master/cli-create/pipelinerun-testflask.yaml | envsubst | oc create -f -```
