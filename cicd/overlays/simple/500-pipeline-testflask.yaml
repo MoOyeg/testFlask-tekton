@@ -6,9 +6,6 @@ metadata:
 spec:
   params:
     - default: ""
-      name: APP_IMAGE_URL
-      type: string
-    - default: ""
       name: APP_CONFIG
       type: string
     - default: ""
@@ -50,7 +47,7 @@ spec:
         - name: submodules
           value: "true"
         - name: depth
-          value: "1"
+          value: "10"
         - name: sslVerify
           value: "true"
         - name: subdirectory
@@ -63,6 +60,18 @@ spec:
       workspaces:
         - name: output
           workspace: testflask-cicd-pvc
+    - name: git-info
+      params:
+        - name: SOURCE_PATH
+          value: src
+      runAfter:
+        - git-clone-code
+      taskRef:
+        kind: Task
+        name: git-info
+      workspaces:
+        - name: source
+          workspace: testflask-cicd-pvc
     - name: python-unittest
       params:
         - name: PYTHON
@@ -74,31 +83,48 @@ spec:
         - name: SOURCE_PATH
           value: src
       runAfter:
-        - git-clone-code
+        - git-info
       taskRef:
         kind: Task
         name: python-unittest
       workspaces:
-        - name: output
+        - name: source
           workspace: testflask-cicd-pvc
-    - name: s2i-build-code
+    - name: buildah-build
       params:
-        - name: VERSION
-          value: "3.8-ubi8"
-        - name: PATH_CONTEXT
-          value: src
-        - name: TLSVERIFY
-          value: "false"
         - name: IMAGE
-          value: "$(params.OUTPUT_IMAGE)"
+          value: $(params.OUTPUT_IMAGE):$(tasks.git-info.results.tag)
+        - name: CONTEXT
+          value: src
+        - name: BUILD_EXTRA_ARGS
+          value: '--label name=testFlask --label last_commit_author="$(tasks.git-info.results.author)" --label '
       runAfter:
         - python-unittest
       taskRef:
-        kind: ClusterTask
-        name: s2i-python
+        kind: Task
+        name: buildah
       workspaces:
         - name: source
           workspace: testflask-cicd-pvc
+    #S2i can be used as builder
+    # - name: s2i-build-code
+    #   params:
+    #     - name: VERSION
+    #       value: "3.8-ubi8"
+    #     - name: PATH_CONTEXT
+    #       value: src
+    #     - name: TLSVERIFY
+    #       value: "false"
+    #     - name: IMAGE
+    #       value: "$(params.OUTPUT_IMAGE)"
+    #   runAfter:
+    #     - buildah-build
+    #   taskRef:
+    #     kind: ClusterTask
+    #     name: s2i-python
+    #   workspaces:
+    #     - name: source
+    #       workspace: testflask-cicd-pvc
     - name: build-dev-env
       params:
         - name: SCRIPT
@@ -118,43 +144,51 @@ spec:
             - $(params.SECRET_NAME)
             - $(params.APP_CONFIG)
             - $(params.APP_MODULE)
-            - $(params.APP_IMAGE_URL)
+            - $(params.NAMESPACE_DEV)/$(params.APP_NAME):$(tasks.git-info.results.tag)
       runAfter:
-        - s2i-build-code
+        - buildah-build
       taskRef:
         kind: Task
         name: openshift-client-custom-1-0
-    - name: tag-dev-prod
+    - name: update-prod-dev
       params:
         - name: SCRIPT
           value: >-
-            oc tag $2/$1:latest $3/$1:latest
+            oc rollout pause deployment/$1 -n $3 &&
+            oc tag $2/$1:$4 $3/$1:$4 &&            
+            oc set triggers deployment/$1 --remove-all -c $1 -n $3 &&
+            oc set triggers deploy/$1 --from-image=$1:$4 -c $1 -n $3 &&
+            oc set image deployment/$1 $1=$3/$1:$4 -n $3 &&
+            oc rollout resume deployment/$1 -n $3
         - name: ARGS
           value:
             - $(params.APP_NAME)
             - $(params.NAMESPACE_DEV)
             - $(params.NAMESPACE_PROD)
+            - "$(tasks.git-info.results.tag)"
       runAfter:
         - build-dev-env
       taskRef:
         kind: Task
         name: openshift-client-custom-1-0
+  finally:
     - name: cleanup-dev-env
       params:
         - name: SCRIPT
           value: >-
-            oc delete dc/$1 -n $2 || true ; oc delete svc/$1 -n $2 || true ; oc
-            delete route/$1 -n $2 || true; oc delete dc/$3 -n $2 || true; oc
-            delete svc/$3 -n $2 || true;oc delete route/$3 -n $2
+            ((oc get dc/$1 -n $2 && oc delete dc/$1 -n $2) || true);((oc get svc/$1 -n $2 && oc delete svc/$1 -n $2) || true);
+            ((oc get route/$1 -n $2 && oc delete route/$1 -n $2) || true);((oc get dc/$3 -n $2 && oc delete dc/$3 -n $2) || true);
+            ((oc get svc/$3 -n $2 && oc delete svc/$3 -n $2) || true);((oc get route/$3 -n $2 && oc delete route/$3 -n $2) || true)
         - name: ARGS
           value:
             - $(params.MYSQL_HOST)
             - $(params.NAMESPACE_DEV)
             - $(params.APP_NAME)
-      runAfter:
-        - tag-dev-prod
       taskRef:
         kind: Task
         name: openshift-client-custom-1-0
   workspaces:
     - name: testflask-cicd-pvc
+#Change images without using oc specific commands
+#oc annotate deployment/$1 image.openshift.io/triggers='[{"from":{"kind":"ImageStreamTag","name":"'$1:$4'"},"fieldPath":"spec.template.spec.containers[?(@.name==\"'$1'\")].image"}]'
+#oc patch deployment/$1 --patch '{"spec": {"template": {"spec": {"containers": [{"name": "'$1'","image": "'$3/$1:$4'"}]}}}}' -n $3 &&

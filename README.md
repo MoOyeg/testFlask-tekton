@@ -44,6 +44,17 @@ To use the eventlistener remember to create a webhook
 
 PipelineRun will start in pending, re-run to start Build
 
+### Extras
+
+***Gatekeeper Enforcement***  
+With the use of the Gatekeeper/OPA you can create policies to enforce/inform of cluster violations.There are sample policies to show an example of enforcing with tekton.Please make sure to install the gatekeeper operator first.
+
+Make sure all tekton pipelines have an ACS Policy Checking Task(Might need to run it 2x as API has to create CRD for contraint)  
+`kustomize build ./cicd/overlays/secure/acs/policy-tekton-checking | oc create -f -`
+
+Make sure all tekton pipelines have an ACS Policy Scanning Task(Might need to run it 2x as API has to create CRD for contraint)  
+`kustomize build ./cicd/overlays/secure/acs/policy-tekton-scanning | oc create -f -`
+
 ---
 
 <!---

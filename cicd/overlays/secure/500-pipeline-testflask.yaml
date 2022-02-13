@@ -93,7 +93,7 @@ spec:
     - name: buildah-build
       params:
         - name: IMAGE
-          value: $(params.OUTPUT_IMAGE):"$(tasks.git-info.results.tag)"
+          value: $(params.OUTPUT_IMAGE):$(tasks.git-info.results.tag)
         - name: CONTEXT
           value: src
         - name: BUILD_EXTRA_ARGS
@@ -182,8 +182,12 @@ spec:
       params:
         - name: SCRIPT
           value: >-
-            oc tag $2/$1:$4 $3/$1:$4 &&
-            oc set image deployment/$1 $1=$3/$1:$4 -n $3
+            oc rollout pause deployment/$1 -n $3 &&
+            oc tag $2/$1:$4 $3/$1:$4 &&            
+            oc set triggers deployment/$1 --remove-all -c $1 -n $3 &&
+            oc set triggers deploy/$1 --from-image=$1:$4 -c $1 -n $3 &&
+            oc set image deployment/$1 $1=$3/$1:$4 -n $3 &&
+            oc rollout resume deployment/$1 -n $3
         - name: ARGS
           value:
             - $(params.APP_NAME)
@@ -213,3 +217,6 @@ spec:
         name: openshift-client-custom-1-0
   workspaces:
     - name: testflask-cicd-pvc
+#Change images without using oc specific commands
+#oc annotate deployment/$1 image.openshift.io/triggers='[{"from":{"kind":"ImageStreamTag","name":"'$1:$4'"},"fieldPath":"spec.template.spec.containers[?(@.name==\"'$1'\")].image"}]'
+#oc patch deployment/$1 --patch '{"spec": {"template": {"spec": {"containers": [{"name": "'$1'","image": "'$3/$1:$4'"}]}}}}' -n $3 &&

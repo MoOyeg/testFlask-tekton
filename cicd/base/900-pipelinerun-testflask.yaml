@@ -28,7 +28,7 @@ spec:
     - name: GIT_URL
       value: https://github.com/MoOyeg/testFlask.git
     - name: GIT_BRANCH
-      value: demo-quick
+      value: master
     - name: PYTHON_VERSION
       value: 3.6.15
     - name: OUTPUT_IMAGE
