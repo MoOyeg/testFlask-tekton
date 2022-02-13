@@ -9,8 +9,6 @@ spec:
   #Creating PipelineRun as Pending
   status: "PipelineRunPending"
   params:
-    - name: APP_IMAGE_URL
-      value: appdev/testflask
     - name: APP_CONFIG
       value: gunicorn.conf.py
     - name: APP_NAME
@@ -39,7 +37,16 @@ spec:
     name: testflask-pipeline
   serviceAccountName: pipeline
   timeout: 1h0m0s
+  # workspaces:
+  #   - name: testflask-cicd-pvc
+  #     persistentVolumeClaim:
+  #       claimName: testflask-cicd-pvc
   workspaces:
     - name: testflask-cicd-pvc
-      persistentVolumeClaim:
-        claimName: testflask-cicd-pvc
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi

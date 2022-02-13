@@ -5,6 +5,11 @@ metadata:
 spec:
   description: This task can be used to run unit tests for python.
   params:
+    - name: BASE_IMAGE
+      description: |
+        The base image for the task.
+      type: string
+      default: docker.io/python
     - default: 3.6.15
       description: "The used Python version, more precisely the tag for the Python image"
       name: PYTHON
@@ -26,7 +31,7 @@ spec:
       name: SOURCE_PATH
       type: string
   steps:
-    - image: "docker.io/python:$(inputs.params.PYTHON)"
+    - image: "$(params.BASE_IMAGE):$(inputs.params.PYTHON)"
       name: python-unittest
       resources: {}
       script: |
@@ -34,6 +39,6 @@ spec:
 
         pip install -r $(inputs.params.REQUIREMENTS_FILE)
         python $(inputs.params.TEST_FILE) || echo "unittest Failed"
-      workingDir: $(workspaces.output.path)/$(inputs.params.SOURCE_PATH)
+      workingDir: $(workspaces.source.path)/$(inputs.params.SOURCE_PATH)
   workspaces:
-    - name: output
+    - name: source

@@ -1,0 +1,8 @@
+# Source:https://github.com/pittar-gitops/gitops-mono-repo-admins/blob/main/03-cluster-services/08-advanced-cluster-security/pipelines-and-secrets/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stackrox
+
+bases:
+  - https://github.com/redhat-cop/gitops-catalog/advanced-cluster-security-operator/instance/overlays/internal-registry-integration?ref=v0.7
