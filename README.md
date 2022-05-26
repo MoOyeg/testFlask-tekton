@@ -41,13 +41,12 @@ Please see Notes below before running this command
 `kustomize build ./cicd/overlays/secure/acs/pipelines-and-secrets | oc create -f -`
 
 3 Error - unable to validate against any security context constraint for builah task when running Pipeline
-Depending on your version of openshift pipelines the buildah task might require an enhanced scc
+Depending on your version of openshift pipelines the buildah task might require an enhanced scc.  
+```oc project 1234-tekton && oc adm policy add-scc-to-user privileged -z pipeline```
 
+4 To use the eventlistener remember to create a webhook  
 
-
-To use the eventlistener remember to create a webhook
-
-PipelineRun will start in pending, re-run to start Build
+5 PipelineRun will start in pending, re-run to start Build  
 
 ### Extras
 
