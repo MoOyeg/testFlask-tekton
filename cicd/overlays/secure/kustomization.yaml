@@ -2,4 +2,5 @@ bases:
   - ../../base
 
 resources:
+  - ./300-pipeline-imagestream.yaml
   - ./500-pipeline-testflask.yaml
