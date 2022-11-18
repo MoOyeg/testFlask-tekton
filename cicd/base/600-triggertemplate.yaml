@@ -23,9 +23,9 @@ spec:
         labels:
           tekton.dev/pipeline: testflask-pipeline
       spec:
+        #Creating PipelineRun as Pending
+        status: "PipelineRunPending"
         params:
-          - name: APP_IMAGE_URL
-            value: appdev/testflask
           - name: APP_CONFIG
             value: gunicorn.conf.py
           - name: APP_NAME
@@ -49,12 +49,21 @@ spec:
           - name: PYTHON_VERSION
             value: 3.6.15
           - name: OUTPUT_IMAGE
-            value: image-registry.openshift-image-registry.svc:5000/appdev/testflask:latest
+            value: image-registry.openshift-image-registry.svc:5000/appdev/testflask
         pipelineRef:
           name: testflask-pipeline
         serviceAccountName: pipeline
         timeout: 1h0m0s
+        # workspaces:
+        #   - name: testflask-cicd-pvc
+        #     persistentVolumeClaim:
+        #       claimName: testflask-cicd-pvc
         workspaces:
           - name: testflask-cicd-pvc
-            persistentVolumeClaim:
-              claimName: testflask-cicd-pvc
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 1Gi

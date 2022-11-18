@@ -9,7 +9,7 @@ metadata:
 spec:
   to:
     kind: Service
-    name: el-listener
+    name: el-testflask-listener
     weight: 100
   port:
     targetPort: http-listener
