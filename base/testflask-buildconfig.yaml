@@ -30,5 +30,5 @@ spec:
     - type: ImageChange
       imageChange:
         lastTriggeredImageID: >-
-          image-registry.openshift-image-registry.svc:5000/openshift/python@sha256:ca90e0562d061fe8c99f92d96b3a148fb6a73b5150b8d49bcac4b1fb75cacb5b
+          image-registry.openshift-image-registry.svc:5000/openshift/python:3.9-ubi8
   runPolicy: Serial

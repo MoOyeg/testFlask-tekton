@@ -2,5 +2,7 @@ bases:
   - ../../base
 
 resources:
+  - ./400-task-rox-image-check.yaml
+  - ./400-task-rox-image-scan.yaml
   - ./300-pipeline-imagestream.yaml
   - ./500-pipeline-testflask.yaml

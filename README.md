@@ -23,7 +23,7 @@ https://docs.openshift.com/container-platform/4.6/pipelines/installing-pipelines
 
 ### 3 Create CICD Environment
 
-Respository provides examples on how to deploy a normal tekton CICD Pipeline and a version that provides Image Scanning and Policy Checking using Red hat's Advanced Cluster Security Product.
+Respository provides examples on how to deploy a normal tekton CICD Pipeline and a version that provides Image Scanning and Policy Checking using Red hat's Advanced Cluster Security Product.Depending on your version of OpenShift the default run of the pipeline might fail, please read Notes below.
 
 **_Deploy pipeline without scanning and security_**  
 `kustomize build ./cicd/overlays/simple | sed -e 's/name: testflask-pipelinerun/# name: testflask-pipelinerun/' | oc create -f -`
@@ -43,10 +43,16 @@ Please see Notes below before running this command
 3 Error - unable to validate against any security context constraint for builah task when running Pipeline
 Depending on your version of openshift pipelines the buildah task might require an enhanced scc.  
 ```oc project 1234-tekton && oc adm policy add-scc-to-user privileged -z pipeline```
+```oc adm policy add-scc-to-user privileged system:serviceaccount:1234-tekton:pipeline```
 
-4 To use the eventlistener remember to create a webhook  
+ oc policy add-role-to-user system:image-pusher system:serviceaccount:1234-tekton:pipeline
 
-5 PipelineRun will start in pending, re-run to start Build  
+4 If you get "error creating build container: Error initializing source docker://registry.redhat.io/ubi8/ubi:latest: unable to retrieve auth token". This means the docker file we are using for build is not using the internal openshift registry.We might have to update the dockerfile to build.
+```oc tag --source=docker registry.redhat.io/ubi8/ubi:latest ubi8:latest -n openshift```
+
+5 To use the eventlistener remember to create a webhook  
+
+6 PipelineRun will start in pending, re-run to start Build  
 
 ### Extras
 

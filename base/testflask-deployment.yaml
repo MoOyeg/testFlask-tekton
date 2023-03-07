@@ -31,9 +31,9 @@ spec:
               protocol: TCP
           env:
             - name: APP_CONFIG
-              value: gunicorn.conf.py
+              value: ./gunicorn/gunicorn.conf.py
             - name: APP_MODULE
-              value: "testapp:app"
+              value: "runapp:app"
             - name: MYSQL_DATABASE
               value: testdb
             - name: MYSQL_HOST

@@ -10,7 +10,7 @@ spec:
         The base image for the task.
       type: string
       default: docker.io/python
-    - default: 3.6.15
+    - default: 3.9.16
       description: "The used Python version, more precisely the tag for the Python image"
       name: PYTHON
       type: string
