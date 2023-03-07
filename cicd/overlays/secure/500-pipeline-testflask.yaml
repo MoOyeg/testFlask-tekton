@@ -93,7 +93,8 @@ spec:
     - name: buildah-build
       params:
         - name: IMAGE
-          value: $(params.OUTPUT_IMAGE):$(tasks.git-info.results.tag)
+          value: $(params.OUTPUT_IMAGE):latest
+      #    value: $(params.OUTPUT_IMAGE):$(tasks.git-info.results.tag)
         - name: CONTEXT
           value: src
         - name: BUILD_EXTRA_ARGS
@@ -134,7 +135,8 @@ spec:
         - name: output_format
           value: json
         - name: image
-          value: $(params.OUTPUT_IMAGE):"$(tasks.git-info.results.tag)"
+          value: $(params.OUTPUT_IMAGE):latest
+          #value: $(params.OUTPUT_IMAGE):"$(tasks.git-info.results.tag)
       runAfter:
         - buildah-build
       taskRef:
@@ -143,7 +145,8 @@ spec:
     - name: rox-image-check
       params:
         - name: image
-          value: $(params.OUTPUT_IMAGE):"$(tasks.git-info.results.tag)"
+          value: $(params.OUTPUT_IMAGE):latest
+          #value: $(params.OUTPUT_IMAGE):"$(tasks.git-info.results.tag)
         - name: rox_api_token
           value: roxsecrets
         - name: rox_central_endpoint
@@ -172,7 +175,7 @@ spec:
             - $(params.SECRET_NAME)
             - $(params.APP_CONFIG)
             - $(params.APP_MODULE)
-            - $(params.NAMESPACE_DEV)/$(params.APP_NAME):$(tasks.git-info.results.tag)
+            - $(params.NAMESPACE_DEV)/$(params.APP_NAME):latest
       runAfter:
         - rox-image-check
       taskRef:
