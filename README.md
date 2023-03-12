@@ -116,5 +116,5 @@ Make sure all tekton pipelines have an ACS Policy Scanning Task(Might need to ru
 oc kustomize ./cicd/overlays/secure/acs/policy-tekton-scanning | oc create -f -
 ```
 
-After the above constraints are created, you should not longer be able to run the non-secure pipeline creation above but you should be able to run the secure version.
+After the above constraints are created, you should no longer be able to run the non-secure pipeline creation above but you should be able to run the secure version.
 
