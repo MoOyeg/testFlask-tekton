@@ -8,6 +8,7 @@ resources:
   - 400-pipeline-service-rolebinding.yaml
   #  - 500-pipeline-pvc.yaml
   - 500-openshift-client-custom-1-0.yaml
+  - 500-task-git-clone-testflask.yaml
   - 500-task-buildah.yaml
   - 500-task-git-info.yaml
   - 500-task-python-unittest.yaml

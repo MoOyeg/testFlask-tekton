@@ -32,10 +32,10 @@ spec:
         Full name of image to scan (example -- gcr.io/rox/sample:5.0-rc1)
       name: image
       type: string
-    - default: 'false'
+    - default: 'true'
       description: |
         When set to `"true"`, skip verifying the TLS certs of the Central
-        endpoint.  Defaults to `"false"`.
+        endpoint.  Defaults to `"true"`.
       name: insecure-skip-tls-verify
       type: string
   results:
@@ -67,6 +67,5 @@ spec:
           > /dev/null
         chmod +x ./roxctl  > /dev/null
         ./roxctl image check \
-          $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && \
-          echo -n "--insecure-skip-tls-verify") \
+          $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && echo -n "--insecure-skip-tls-verify") \
           -e "$ROX_CENTRAL_ENDPOINT" --image "$(params.image)"

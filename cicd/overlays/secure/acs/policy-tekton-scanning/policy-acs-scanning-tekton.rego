@@ -38,7 +38,7 @@ no_any_stackrox_scan_task_negation {
 
 any_stackrox_scan_task {
 	some i
-	resource.spec.tasks[i].taskRef.kind == "ClusterTask"
+	resource.spec.tasks[i].taskRef.kind == "Task"
 	name := resource.spec.tasks[i].taskRef.name
 	name == "rox-image-scan"
 }
@@ -48,7 +48,7 @@ violation[{"msg": msg}] {
 
 	no_any_stackrox_scan_task_negation
 
-	msg := sprintf("Denied -- Pipeline %v does not have the ACS ClusterTask for image Scanning(rox-image-scan), This is required by Policy", [resource_name])
+	msg := sprintf("Denied -- Pipeline %v does not have the ACS Task for image Scanning(rox-image-scan), This is required by Policy", [resource_name])
 }
 
 has_field(obj, field) {
