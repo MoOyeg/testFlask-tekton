@@ -133,7 +133,7 @@ spec:
             ; oc expose svc/$1 -n $4
             ; oc set env deploy/$1 --from=secret/$5 -n $4
             ; oc label deployment/$1 app=$3 --overwrite=true -n $4
-            ; oc new-app --image-stream $8 --name $3 --env=APP_CONFIG=$6 --env=APP_MODULE=$7 --env=MYSQL_HOST=$1 --env=MYSQL_DB=$2 -n $4
+            ; oc new-app --docker-image $8 --name $3 --env=APP_CONFIG=$6 --env=APP_MODULE=$7 --env=MYSQL_HOST=$1 --env=MYSQL_DB=$2 -n $4
             ; oc expose svc/$3 -n $4
         - name: ARGS
           value:
@@ -144,7 +144,7 @@ spec:
             - $(params.SECRET_NAME)
             - $(params.APP_CONFIG)
             - $(params.APP_MODULE)
-            - $(params.NAMESPACE_DEV)/$(params.APP_NAME):$(tasks.git-info.results.tag)
+            - $(params.OUTPUT_IMAGE):$(tasks.git-info.results.tag)
       runAfter:
         - buildah-build
       taskRef:
@@ -155,10 +155,9 @@ spec:
         - name: SCRIPT
           value: >-
             oc rollout pause deployment/$1 -n $3 &&
-            oc tag $2/$1:$4 $3/$1:$4 &&            
+            oc tag --source=docker $5:$4 $3/$1:$4 &&        
             oc set triggers deployment/$1 --remove-all -c $1 -n $3 &&
-            oc set triggers deployment/$1 --from-image=$1:$4 -c $1 -n $3 &&
-            oc set image deployment/$1 $1=$3/$1:$4 -n $3 &&
+            oc set image deployment/$1 --source=docker $1=$5:$4 -n $3 &&
             oc rollout resume deployment/$1 -n $3
         - name: ARGS
           value:
@@ -166,6 +165,7 @@ spec:
             - $(params.NAMESPACE_DEV)
             - $(params.NAMESPACE_PROD)
             - "$(tasks.git-info.results.tag)"
+            - $(params.OUTPUT_IMAGE)
       runAfter:
         - build-dev-env
       taskRef:

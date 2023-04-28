@@ -73,6 +73,8 @@ Please note this section is not maintained and is pulled from other repos.
   ```
 ## Notes
 
+- [Please note scanning the Openshift internal registry is not supported as of this writing.](https://access.redhat.com/solutions/6993372)
+
 - Error('image-scan-pod" is waiting to start: CreateContainerConfigError').With error ('Error: secret "roxsecrets" not found'). ACS roxctl requires a secret that contains the Central cluster url and the API Token. You can try using the below command to create this(This might not be updated).  
   ```bash
   oc kustomize ./cicd/overlays/secure/acs/pipelines-and-secrets | oc create -f -
@@ -82,7 +84,7 @@ Please note this section is not maintained and is pulled from other repos.
 Depending on your version of openshift pipelines the buildah task might require an enhanced scc.  
 
   ```bash
-  oc project 1234-tekton && oc adm policy add-scc-to-user privileged -z pipeline
+  oc project 1234-tekton
   ```
   ```bash
   oc adm policy add-scc-to-user privileged system:serviceaccount:1234-tekton:pipeline
@@ -116,5 +118,5 @@ Make sure all tekton pipelines have an ACS Policy Scanning Task(Might need to ru
 oc kustomize ./cicd/overlays/secure/acs/policy-tekton-scanning | oc create -f -
 ```
 
-After the above constraints are created, you should no longer be able to run the non-secure pipeline creation above but you should be able to run the secure version.
+After the above constraints are created, you should not longer be able to run the non-secure pipeline creation above but you should be able to run the secure version.
 
