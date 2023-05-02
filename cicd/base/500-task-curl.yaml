@@ -12,7 +12,6 @@ metadata:
 spec:
   description: >-
     This task performs curl operation to transfer data from internet.
-
   params:
   - name: url
     description: URL to curl'ed
@@ -24,8 +23,7 @@ spec:
   - name: sleep_time
     description: time to sleep between tries
     type: string
-    default: "5"
-  
+    default: "5"  
   - name: options
     description: options of url
     type: array
