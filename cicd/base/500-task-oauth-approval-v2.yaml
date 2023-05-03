@@ -31,9 +31,15 @@ spec:
     description: The Service Account to use for the Approval Pod
     type: string
     default: ""
+  volumes:
+    - name: tekton-memory-storage
+      emptyDir: {}
   sidecars:
-    - name: oauth-sidecar-prep
+    - name: oauth-tekton-prep
       image: quay.io/openshift/origin-cli:$(params.OC_VERSION)
+      volumeMounts:
+        - mountPath: /tekton-memory-storage
+          name: tekton-memory-storage
       env:
         - name: PIPELINE_NAMESPACE
           valueFrom:
@@ -67,6 +73,8 @@ spec:
             echo "Will use ${TASK_SERVICEACCOUNTNAME} as service account for approval pod"
             APPROVAL_POD_SERVICEACCOUNT=${TASK_SERVICEACCOUNTNAME}
           fi
+          
+          echo "test3" > /tekton-memory-storage/test3.txt
 
           echo "Create Service for Oauth Pod"
           echo """
@@ -91,7 +99,8 @@ spec:
           oc annotate service ${PIPELINE_RUN_NAME} service.beta.openshift.io/serving-cert-secret-name=${PIPELINE_RUN_NAME}-secret-tls -n ${PIPELINE_NAMESPACE}
 
           echo "Create Route for Oauth Pod"
-          oc expose service ${PIPELINE_RUN_NAME} --name ${PIPELINE_RUN_NAME} --port oauth-proxy -n ${PIPELINE_NAMESPACE} --dry-run=client -o yaml | oc apply -f - || echo "Route already exists or we couldnt create"
+          oc create route passthrough ${PIPELINE_RUN_NAME} --service ${PIPELINE_RUN_NAME} --port oauth-proxy -n ${PIPELINE_NAMESPACE} --dry-run=client -o yaml | oc apply -f - || echo "Route already exists or we couldnt create"
+          #oc expose service ${PIPELINE_RUN_NAME} --name ${PIPELINE_RUN_NAME} --port oauth-proxy -n ${PIPELINE_NAMESPACE} --dry-run=client -o yaml | oc apply -f - || echo "Route already exists or we couldnt create"
 
           echo "Annotate ServiceAccount for Pipeline"
           oc -n ${PIPELINE_NAMESPACE} annotate serviceaccount ${APPROVAL_POD_SERVICEACCOUNT} --overwrite=true serviceaccounts.openshift.io/oauth-redirectreference.first='{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"'${PIPELINE_RUN_NAME}'"}}'
@@ -100,6 +109,9 @@ spec:
       image: quay.io/openshift/origin-cli:$(params.OC_VERSION)
       command:
         - /bin/bash
+      volumeMounts:
+        - mountPath: /tekton-memory-storage
+          name: tekton-memory-storage
       env:
         - name: PIPELINE_NAMESPACE
           valueFrom:
@@ -132,6 +144,25 @@ spec:
             APPROVAL_POD_SERVICEACCOUNT=${TASK_SERVICEACCOUNTNAME}
           fi
 
+          echo "Create a sessionid to help compare oauth pod and tekton pipelinerun"
+          echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c6) > /tekton-memory-storage/tektonsecret
+          
+          echo "Create a String to Represent Approved"
+          echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c43) > /tekton-memory-storage/uniqueapprovedstring
+
+          echo "Create a String to Represent Denied"
+          echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c43) > /tekton-memory-storage/uniquedeniedstring
+
+          echo "Create a String for Approval App Cookie Secret"
+          echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c43) > /tekton-memory-storage/appcookiesecret
+          
+          oc create secret generic ${PIPELINE_RUN_NAME}-oauth-secrets \
+          --from-file=tektonsecret=/tekton-memory-storage/tektonsecret \
+          --from-file=uniqueapprovedstring=/tekton-memory-storage/uniqueapprovedstring \
+          --from-file=uniquedeniedstring=/tekton-memory-storage/uniquedeniedstring \
+          --from-file=appcookiesecret=/tekton-memory-storage/appcookiesecret \
+          -n ${PIPELINE_NAMESPACE}
+          
           echo "Creating Necessary Infrastructure Pod For Approval"
           echo """
             kind: Pod
@@ -152,14 +183,14 @@ spec:
               initContainers:
                 - name: oauth-proxy-prep
                   image: quay.io/openshift/origin-cli:${OC_VERSION}
+                  volumeMounts:
+                    - name: memory-storage
+                      mountPath: /memory-storage
                   command:
                     - /bin/bash
                   args:
                     - '-c'
                     - |
-                      echo "Create Session Secret for Oauth Pod"
-                      echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c43) > /memory-storage/session-secret
-
                       echo "Extract TLS Cert/Key for Oauth Pod"
                       temp_counter=10
                       if [ ! $(oc get secret ${PIPELINE_RUN_NAME} -n ${PIPELINE_NAMESPACE} -o name) = "secret/${PIPELINE_RUN_NAME}" ]; then
@@ -174,21 +205,26 @@ spec:
                           fi
                         done
                       fi
+
                       oc extract secret/${PIPELINE_RUN_NAME}-secret-tls --keys=tls.crt --to=/memory-storage -n ${PIPELINE_NAMESPACE}
                       echo "Extracted TLS Cert for Oauth Pod"
                       oc extract secret/${PIPELINE_RUN_NAME}-secret-tls --keys=tls.key --to=/memory-storage -n ${PIPELINE_NAMESPACE}
                       echo "Extracted TLS Key for Oauth Pod"
-                  volumeMounts:
-                    - name: memory-storage
-                      mountPath: /memory-storage
+
+                      echo "Create a Secret for the Oauth Proxy"
+                      echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c43)  | tee -a /memory-storage/session-secret >/dev/null              
+
               containers:
-                - name: sidecar-openshift-oauth-proxy-listener
+                - name: openshift-oauth-proxy-listener
                   image: ${OAUTH_IMAGE}
                   command:
                     - /bin/bash
                   volumeMounts:
                     - name: memory-storage
                       mountPath: /memory-storage
+                  envFrom:
+                    - secretRef:
+                        name: ${PIPELINE_RUN_NAME}-oauth-secrets
                   args:
                     - '-c'
                     - |
@@ -221,21 +257,28 @@ spec:
                       fi
 
                       echo "Starting oauth proxy"
-                      oauth-proxy \
-                        -provider=openshift \
-                        -request-logging=true \
-                        -https-address=:8888 \
-                        -http-address= \
-                        -email-domain=* \
-                        -upstream=http://localhost:8080 \
-                        -tls-cert=/memory-storage/tls.crt \
-                        -tls-key=/memory-storage/tls.key \
-                        -cookie-secret-file=/memory-storage/session-secret \
-                        -openshift-service-account=${TASK_SERVICEACCOUNTNAME}\
-                        -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt                
+                      oauth-proxy -provider=openshift \
+                      -request-logging=true \
+                      -https-address=:8888 \
+                      -http-address= \
+                      -email-domain=* \
+                      -upstream=http://localhost:8080 \
+                      -tls-cert=/memory-storage/tls.crt \
+                      -tls-key=/memory-storage/tls.key \
+                      -cookie-secret-file=/memory-storage/session-secret \
+                      -openshift-service-account=${TASK_SERVICEACCOUNTNAME} \
+                      -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                      -footer=\"Please confirm this value from PipelineLogs before login - \$tektonsecret\"
+
+                # - name: oauth-approver-app-pod
+                #   image: image-registry.openshift-image-registry.svc:5000/${PIPELINE_NAMESPACE}/oauth-approver-app:latest
+                #   command:
+                #     - /bin/bash
+                #   volumeMounts:
+                #     - name: memory-storage
+                #       mountPath: /memory-storage
+                #   env:
+                #     - name: TEKTONSESSIONID
+                #       value: ${TEKTONSESSIONID}
           """ | oc apply -f -
-
-          echo "Waiting for Manual Approval"
-
-
-          
+          echo "Please verify this secret on Oauth Page - $(cat /tekton-memory-storage/tektonsecret)"

@@ -10,7 +10,6 @@ import logging
 import sys
 
 app = Flask(__name__)
-app.secret_key = 'test'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -19,8 +18,6 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-
-
 
 class PostForm(FlaskForm):
     '''Set Form to be used fields'''
@@ -52,31 +49,34 @@ def approval_status():
     if request.method == 'POST':
         approval_string=""
         if request.form['submit_button'] == 'Approve':
+            logger.info("Approval Provided for Pipeline Run Name: %s",request.form['pipelinerun'])
             try:
-                approval_string=os.environ.get('INSTANCE_APPROVED_STRING')
+                approval_string=os.environ.get('uniqueapprovedstring')
             except Exception as e:
-                logger.error("Error getting $INSTANCE_APPROVED_STRING from environment will exit %s",e)
+                logger.error("Error getting uniqueapprovedstring info from environment - will exit %s",e)
                 sys.exit(1)
-        else:
+            print(approval_string)
+            return "Will Approve Pipeline Run"
+        elif request.form['submit_button'] == 'Disapprove':
+            logger.info("Disapproval Provided for Pipeline Run Name: %s",request.form['pipelinerun'])
             try:
-                approval_string=os.environ.get('INSTANCE_DISAPPROVED_STRING')
+                disapproval_string=os.environ.get('UNIQUE_DISAPPROVED_STRING_LOCATION') or "/memory-storage/unique_disapproved_string"
             except Exception as e:
-                logger.error("Error getting $INSTANCE_DISAPPROVED_STRING from environment will exit %s",e)
-                sys.exit(1)            
+                logger.error("Error getting uniquedeniedstring info from environment - will exit %s",e)
+                sys.exit(1)
+            print(disapproval_string)
+            return "Will Dissaprove Pipeline Run"   
         
         if approval_string == "" or approval_string == None:
-            logger.error("Error getting $INSTANCE_APPROVED_STRING or $INSTANCE_DISAPPROVED_STRING from environment will exit")
-            sys.exit(1)       
-        
-        workfile = os.environ.get('WORKFILE_LOCATION') or "/memory-storage/workfile"
-        try:
-            f = open(workfile, 'w+')
-            f.write("Approved")
-            f.close()
-        except Exception as e:
-            logger.error("Error writing to workfile %s",e)
-
-    return "test"
+            logger.error("Error getting approval string or denied string from environment - will exit")
+            sys.exit(1)  
+    return "Promotion Process has Failed, will end Pipeline Run"
 
 if __name__ == '__main__':
+    logger.info("Starting Approval App")
+    try:
+        logger.info("Get Flask Secret Key")
+        app.secret_key=os.environ.get('appcookiesecret')
+    except Exception as e:
+        logger.error("Could not get App Cookie Secret from environment - will exit %s",e)
     app.run(host='0.0.0.0', port=8080, debug=True)
