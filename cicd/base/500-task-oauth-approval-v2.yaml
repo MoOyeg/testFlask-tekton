@@ -52,6 +52,14 @@ spec:
     description: The Service Account to use for the Approval Pod, will default to pipeline service account if in same namespace as pipeline
     type: string
     default: ""
+  - name: PROMOTE_COMMAND
+    description: The command this pipeline should run to promote e.g oc patch deploy or oc tag
+    type: string
+    default: "promote-test"
+  - name: PRODUCTION_NAMESPACE
+    description: The namespace the PROMOTE_COMMAND will be run on. We will also scope tokens to this namespace
+    type: string
+    default: "promote-namespace"
   volumes:
     - name: tekton-memory-storage
       emptyDir:
@@ -93,6 +101,10 @@ spec:
           value: $(params.OAUTH_APPROVER_BRANCH)
         - name: OAUTH_APPROVER_IMAGE
           value: $(params.OAUTH_APPROVER_IMAGE)
+        - name: PROMOTE_COMMAND
+          value: $(params.PROMOTE_COMMAND)
+        - name: PRODUCTION_NAMESPACE
+          value: $(params.PRODUCTION_NAMESPACE)
       command:
         - /bin/bash
       args:
@@ -139,6 +151,10 @@ spec:
           value: $(params.OAUTH_APPROVER_BRANCH)
         - name: OAUTH_APPROVER_IMAGE
           value: $(params.OAUTH_APPROVER_IMAGE)
+        - name: PROMOTE_COMMAND
+          value: $(params.PROMOTE_COMMAND)
+        - name: PRODUCTION_NAMESPACE
+          value: $(params.PRODUCTION_NAMESPACE)
       args:
         - '-cx'
         - |
@@ -353,6 +369,12 @@ spec:
                   env:
                     - name: OAUTH_APPROVER_PORT
                       value: \"${OAUTH_APPROVER_PORT}\"
+                    - name: PIPELINE_RUN_NAME
+                      value: \"${PIPELINE_RUN_NAME}\"
+                    - name: PROMOTE_COMMAND
+                      value: \"${PROMOTE_COMMAND}\"
+                    - name: PROMOTE_NAMESPACE
+                      value: \"${PROMOTE_NAMESPACE}\"                
                   envFrom:
                     - secretRef:
                         name: ${PIPELINE_RUN_NAME}-oauth-secrets

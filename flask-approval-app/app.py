@@ -38,18 +38,17 @@ def home():
     form = PostForm()
     try:        
         form.pipelinerun=os.environ.get('PIPELINE_RUN_NAME') or "Unknown"
-        form.approval_cmd=os.environ.get('APPROVAL_CMD') or "Unknown"
+        form.approval_cmd=os.environ.get('PROMOTE_COMMAND') or "Unknown"
     except Exception as e:
-        logger.error("Error getting $PIPELINE_RUN_NAME or $APPROVAL_CMD from environment will exit %s",e)
+        logger.error("Error getting $PIPELINE_RUN_NAME or $PROMOTE_COMMAND from environment will exit %s",e)
         onfailure_update_disk()
         
     try:
        form.authorized_user=request.authorization.username
     except:
         logger.error("Error getting authorized username from Oauth Proxy %s",e)
-        onfailure_update_disk()
+        onfailure_update_disk()    
     
-    print(form.authorized_user)
     logger.info("Approval Requested for Pipeline Run Name: %s",form.pipelinerun)
     return render_template('approval.html', postform=form)
 
