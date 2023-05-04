@@ -27,6 +27,11 @@ class PostForm(FlaskForm):
     approve = SubmitField('submit')
     disapprove = SubmitField('disapprove')
 
+def onfailure_update_disk():
+    '''Update Disk with Failure'''
+    with open('/memory-storage/approvaldecision', 'w') as f:
+        f.write("Error")
+        
 @app.route("/")
 def home():
     logger.info("Home Page Accessed")
@@ -37,8 +42,7 @@ def home():
         form.approval_cmd=os.environ.get('APPROVAL_CMD') or "Unknown"
     except Exception as e:
         logger.error("Error getting $PIPELINE_RUN_NAME or $APPROVAL_CMD from environment will exit %s",e)
-        sys.exit(1)
-    request.authorization.username
+        onfailure_update_disk()
     
     logger.info("Approval Requested for Pipeline Run Name: %s",form.pipelinerun)
     return render_template('approval.html', postform=form)
@@ -46,6 +50,8 @@ def home():
 
 @app.route("/approval_status",methods=['POST'])
 def approval_status():
+    '''Get Approval Status and Update Disk'''
+    
     if request.method == 'POST':
         approval_string=""
         if request.form['submit_button'] == 'Approve':
@@ -54,29 +60,46 @@ def approval_status():
                 approval_string=os.environ.get('uniqueapprovedstring')
             except Exception as e:
                 logger.error("Error getting uniqueapprovedstring info from environment - will exit %s",e)
-                sys.exit(1)
-            print(approval_string)
+                onfailure_update_disk()
+            with open('/memory-storage/approvaldecision', 'w') as f:
+                f.write(approval_string)
             return "Will Approve Pipeline Run"
+        
         elif request.form['submit_button'] == 'Disapprove':
             logger.info("Disapproval Provided for Pipeline Run Name: %s",request.form['pipelinerun'])
             try:
-                disapproval_string=os.environ.get('UNIQUE_DISAPPROVED_STRING_LOCATION') or "/memory-storage/unique_disapproved_string"
+                logger.debug("Get Denied String from Disk")
+                with open('/memory-storage/appcookiesecret', 'r') as f:
+                    disapproval_string = f.read()                
             except Exception as e:
                 logger.error("Error getting uniquedeniedstring info from environment - will exit %s",e)
-                sys.exit(1)
-            print(disapproval_string)
-            return "Will Dissaprove Pipeline Run"   
+                onfailure_update_disk()
+            with open('/memory-storage/approvaldecision', 'w') as f:
+                f.write(disapproval_string)
+            return "Will Dissaprove Pipeline Run"
         
-        if approval_string == "" or approval_string == None:
-            logger.error("Error getting approval string or denied string from environment - will exit")
-            sys.exit(1)  
+    if approval_string == "" or approval_string == None:
+        logger.error("Error getting approval string or denied string from environment - will exit")
+    onfailure_update_disk()                   
     return "Promotion Process has Failed, will end Pipeline Run"
 
 if __name__ == '__main__':
     logger.info("Starting Approval App")
+    
     try:
         logger.info("Get Flask Secret Key")
-        app.secret_key=os.environ.get('appcookiesecret')
+        with open('/memory-storage/appcookiesecret', 'r') as f:
+            app.config['SECRET_KEY'] = f.read()        
     except Exception as e:
         logger.error("Could not get App Cookie Secret from environment - will exit %s",e)
-    app.run(host='0.0.0.0', port=8080, debug=True)
+        onfailure_update_disk()
+        
+    try:
+        logger.info("Get Flask Port")
+        port=os.environ.get('OAUTH_APPROVER_PORT')
+        app.run(host='127.0.0.1', port=port, debug=True)
+    except Exception as e:
+        logger.error("Could not get Flask Port from environment - will exit %s",e)
+        
+        
+        
