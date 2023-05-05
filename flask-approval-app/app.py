@@ -37,8 +37,8 @@ def home():
     logger.info("Home Page Accessed")
     form = PostForm()
     try:        
-        form.pipelinerun=os.environ.get('PIPELINE_RUN_NAME') or "Unknown"
-        form.approval_cmd=os.environ.get('PROMOTE_COMMAND') or "Unknown"
+        form.pipelinerun=os.environ.get('PIPELINE_RUN_NAME')
+        form.approval_cmd=os.environ.get('PROMOTE_COMMAND')
     except Exception as e:
         logger.error("Error getting $PIPELINE_RUN_NAME or $PROMOTE_COMMAND from environment will exit %s",e)
         onfailure_update_disk()
@@ -60,7 +60,7 @@ def approval_status():
     if request.method == 'POST':
         approval_string=""
         if request.form['submit_button'] == 'Approve':
-            logger.info("Approval Provided for Pipeline Run Name: %s",request.form['pipelinerun'])
+            logger.info("Approval Provided for Pipeline Run Name: %s",os.environ.get('PIPELINE_RUN_NAME'))
             try:
                 approval_string=os.environ.get('uniqueapprovedstring')
             except Exception as e:
@@ -68,10 +68,9 @@ def approval_status():
                 onfailure_update_disk()
             with open('/memory-storage/approvaldecision', 'w') as f:
                 f.write(approval_string)
-            return "Will Approve Pipeline Run"
-        
+            return "Will Approve Pipeline Run"        
         elif request.form['submit_button'] == 'Disapprove':
-            logger.info("Disapproval Provided for Pipeline Run Name: %s",request.form['pipelinerun'])
+            logger.info("Disapproval Provided for Pipeline Run Name: %s",os.environ.get('PIPELINE_RUN_NAME'))
             try:
                 logger.debug("Get Denied String from Disk")
                 with open('/memory-storage/appcookiesecret', 'r') as f:
