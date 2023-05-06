@@ -238,7 +238,7 @@ spec:
           echo "Create a sessionid to help compare oauth pod and tekton pipelinerun"
           echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c6) | tee -a /tekton-memory-storage/tektonsecret >/dev/null           
         
-          oc create secret generic ${PIPELINE_RUN_NAME}-oauth-secrets \
+          oc create secret generic ${PIPELINE_RUN_NAME}-tekton-secret \
           --from-file=tektonsecret=/tekton-memory-storage/tektonsecret \
           -n ${OAUTH_APPROVAL_POD_NAMESPACE}
           
@@ -302,6 +302,12 @@ spec:
 
                       echo -e "Create a String for Approval App Cookie Secret\n"
                       echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c43) | tee -a /memory-storage/appcookiesecret >/dev/null
+
+                      oc create secret generic ${PIPELINE_RUN_NAME}-oauth-secret \
+                      --from-file=UNIQUE_APPROVED_SECRET=/tekton-memory-storage/uniqueapprovedstring \
+                      --from-file=UNIQUE_DENIED_SECRET=/tekton-memory-storage/uniquedeniedstring \
+                      --from-file=APP_COOKIE_SECRET=/tekton-memory-storage/appcookiesecret \
+                      -n ${OAUTH_APPROVAL_POD_NAMESPACE}
               containers:
                 - name: openshift-oauth-proxy-listener
                   image: ${OAUTH_IMAGE}
@@ -312,7 +318,7 @@ spec:
                       mountPath: /memory-storage
                   envFrom:
                     - secretRef:
-                        name: ${PIPELINE_RUN_NAME}-oauth-secrets
+                        name: ${PIPELINE_RUN_NAME}-tekton-secret
                   args:
                     - '-cx'
                     - |
@@ -377,7 +383,8 @@ spec:
                       value: \"${PROMOTE_NAMESPACE}\"                
                   envFrom:
                     - secretRef:
-                        name: ${PIPELINE_RUN_NAME}-oauth-secrets
-
+                        name: ${PIPELINE_RUN_NAME}-tekton-secret
+                    - secretRef:
+                        name: ${PIPELINE_RUN_NAME}-oauth-secret
           """ | oc apply -f -
           echo "Please verify this secret on Oauth Page - $(cat /tekton-memory-storage/tektonsecret)"
