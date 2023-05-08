@@ -10,8 +10,6 @@ app = Flask(__name__)
 app_failure_status=False
 app_failure_message=""
 
-
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
@@ -66,6 +64,13 @@ except Exception as e:
     error_msg="Error getting App Cookie Secret from environment - will exit"
     logger.error("{}-{}".format(error_msg,e))
     onfailure_update_disk(error_msg)
+    sys.exit(1)
+    
+if os.environ.get('APP_COOKIE_SECRET') == None or os.environ.get('APP_COOKIE_SECRET') == "":
+    error_msg="App Cookie Secret is empty - will exit"
+    logger.error("{}".format(error_msg))
+    onfailure_update_disk(error_msg)
+    sys.exit(1)
 
 @app.route("/")
 def home():
@@ -84,8 +89,8 @@ def home():
         onfailure_update_disk(error_msg)
         
     try:
-        form.authorized_user="testuser"
-       #form.authorized_user=request.authorization.username
+        #form.authorized_user="testuser"
+        form.authorized_user=request.authorization.username
        
     except Exception as e:
         error_msg="Error getting authorized username from Oauth Proxy"
@@ -145,20 +150,14 @@ def approval_status():
         logger.info("Promotion Process has been Denied, will end Pipeline Run")
         return "Promotion Process has been Denied, will end Pipeline Run"            
 
-# if __name__ == '__main__':
-#     logger.info("Starting Approval App")
-        
-
-
-        
-    # try:
-    #     logger.info("Get Flask Port")
-    #     port=os.environ.get('OAUTH_APPROVER_PORT')
-    #     app.run(host='127.0.0.1', port=port, debug=True)
-    # except Exception as e:
-    #     error_msg="Error getting Flask Port from environment - will exit"
-    #     logger.error("Could not get Flask Port from environment - will exit %s",e)
-    #     onfailure_update_disk(error_msg)
-    #     sys.exit(1)        
+if __name__ == '__main__':
+    logger.info("Starting Approval App") 
+       
+    logger.debug("Get Flask Port")
+    port=os.environ.get('OAUTH_APPROVER_PORT')
+    if port == None or port == "":
+        port=8080
+    app.run(host='127.0.0.1', port=port,use_reloader=False)
+     
         
         

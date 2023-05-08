@@ -304,9 +304,9 @@ spec:
                       echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c43) | tee -a /memory-storage/appcookiesecret >/dev/null
 
                       oc create secret generic ${PIPELINE_RUN_NAME}-oauth-secret \
-                      --from-file=UNIQUE_APPROVED_SECRET=/tekton-memory-storage/uniqueapprovedstring \
-                      --from-file=UNIQUE_DENIED_SECRET=/tekton-memory-storage/uniquedeniedstring \
-                      --from-file=APP_COOKIE_SECRET=/tekton-memory-storage/appcookiesecret \
+                      --from-file=UNIQUE_APPROVED_SECRET=/memory-storage/uniqueapprovedstring \
+                      --from-file=UNIQUE_DENIED_SECRET=/memory-storage/uniquedeniedstring \
+                      --from-file=APP_COOKIE_SECRET=/memory-storage/appcookiesecret \
                       -n ${OAUTH_APPROVAL_POD_NAMESPACE}
               containers:
                 - name: openshift-oauth-proxy-listener
