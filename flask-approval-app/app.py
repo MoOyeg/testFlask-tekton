@@ -25,6 +25,7 @@ class PostForm(FlaskForm):
     '''Set Form to be used fields'''
     authorized_user = StringField('authorized_user')
     pipelinerun = StringField('pipelinerun')
+    tekton_instance_name = StringField('tekton_instance_name')
     approval_cmd= StringField('approval_cmd')
     approve = SubmitField('submit')
     disapprove = SubmitField('disapprove')
@@ -50,7 +51,8 @@ def get_app_failure_message():
 def onfailure_update_disk(msg):
     '''Update Disk with Failure'''
     try:
-        with open('/memory-storage/approvaldecision', 'w') as f:
+        tekton_instance_name=os.environ.get('TEKTON_INSTANCE_SECRET')
+        with open('/memory-storage/{}'.format(tekton_instance_name), 'w') as f:
             f.write("Error")
     except Exception as e:
         logger.error("Error writing error decision to disk - will exit")
@@ -75,6 +77,7 @@ def home():
     try:        
         form.pipelinerun=os.environ.get('PIPELINE_RUN_NAME')
         form.approval_cmd=os.environ.get('PROMOTE_COMMAND')
+        form.tekton_instance_name=os.environ.get('TEKTON_INSTANCE_SECRET')        
     except Exception as e:
         error_msg="Error getting $PIPELINE_RUN_NAME or $PROMOTE_COMMAND from environment will exit"
         logger.error("{}-{}".format(error_msg,e))
@@ -126,8 +129,9 @@ def approval_status():
         logger.error("{}".format(error_msg))
         return onfailure_update_disk(error_msg)   
     
-    try:   
-        with open('/memory-storage/approvaldecision', 'w') as f:
+    try: 
+        tekton_instance_name=os.environ.get('TEKTON_INSTANCE_SECRET') 
+        with open('/memory-storage/{}'.format(tekton_instance_name), 'w') as f:
             f.write(approval_string)
     except Exception as e:
         error_msg="Error writing approval decision to disk - will exit"

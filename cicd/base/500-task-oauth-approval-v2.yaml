@@ -239,7 +239,7 @@ spec:
           echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c6) | tee -a /tekton-memory-storage/tektonsecret >/dev/null           
         
           oc create secret generic ${PIPELINE_RUN_NAME}-tekton-secret \
-          --from-file=tektonsecret=/tekton-memory-storage/tektonsecret \
+          --from-file=TEKTON_INSTANCE_SECRET=/tekton-memory-storage/tektonsecret \
           -n ${OAUTH_APPROVAL_POD_NAMESPACE}
           
           echo "Creating Necessary Infrastructure Pod For Approval"
@@ -362,7 +362,7 @@ spec:
                       -cookie-secret-file=/memory-storage/session-secret \
                       -openshift-service-account=${TASK_SERVICEACCOUNTNAME} \
                       -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-                      -footer=\"Please confirm this value from PipelineLogs before login - \$tektonsecret\"
+                      -footer=\"Please confirm this value from PipelineLogs before login - \$TEKTON_INSTANCE_SECRET\"
                 - name: oauth-approval-app-pod
                   image: image-registry.openshift-image-registry.svc:5000/${OAUTH_APPROVAL_POD_NAMESPACE}/${PIPELINE_RUN_NAME}-oauth-approval:latest
                   command:
