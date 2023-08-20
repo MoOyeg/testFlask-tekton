@@ -1,0 +1,33 @@
+{
+    "apiVersion": "tekton.dev/v1",
+    "kind": "Pipeline",
+    "metadata": {
+        "name": "generate-random-number-pipeline",
+        "namespace": "1234-tekton"
+    },
+    "spec": {
+        "tasks": [
+            {
+                "name": "generate-random-number",
+                "taskRef": {
+                    "kind": "Task",
+                    "params": [
+                        {
+                            "name": "bundle",
+                            "value": "docker.io/myorg/mybundle:1.0"
+                        },
+                        {
+                            "name": "name",
+                            "value": "generate-random-number"
+                        },
+                        {
+                            "name": "kind",
+                            "value": "task"
+                        }
+                    ],
+                    "resolver": "bundles"
+                }
+            }
+        ]
+    }
+}
