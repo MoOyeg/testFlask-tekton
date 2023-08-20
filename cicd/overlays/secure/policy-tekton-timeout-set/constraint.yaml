@@ -1,0 +1,8 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: PolicyTektonTimerSet
+metadata:
+  name: policytektontimerset
+spec:
+  match:
+    namespace:
+      - 1234-tekton

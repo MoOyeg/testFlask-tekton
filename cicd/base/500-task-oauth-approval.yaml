@@ -1,0 +1,185 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: oauth-promote
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.12.1"
+    tekton.dev/categories: CLI
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
+spec:
+  description: >-
+    This tasks provides manual approval for pipelines in openshift using the openshift oauth proxy.
+  params:
+  - name: url
+    description: URL to curl'ed
+    type: string
+  - name: success_count
+    description: number of times to try before success
+    type: string
+    default: "3"
+  - name: sleep_time
+    description: time to sleep between tries
+    type: string
+    default: "5"  
+  - name: options
+    description: options of url
+    type: array
+    default: []
+  - name: OC_VERSION
+    description: The OpenShift Version to use
+    type: string
+    default: "4.12"
+  - name: OAUTH_PORT
+    description: The port oauth is going to be proxied on
+    type: string
+    default: "8888"
+  - name: APP_PORT
+    description: Port application is going to listen for oauth to proxy to
+    type: string
+    default: "8080"
+  - name: OPENSHIFT_OAUTH_IMAGE
+    description: OpenShift OAuth Proxy Image
+    type: string
+    default: "quay.io/openshift/origin-oauth-proxy@sha256:c92a1480b2628d50d8fe158df9451598406e2e5cc7177cf5efcb81caba120afd"
+  sidecars:
+    - name: oauth-sidecar-prep
+      image: quay.io/openshift/origin-cli:$(params.OC_VERSION)
+      command:
+        - /bin/bash
+      volumeMounts:
+        - mountPath: /memory-storage
+          name: memory-storage
+      args:
+        - -c
+        - |
+          echo "Create and Patch Service for Oauth Pod"
+          echo "oc create service ${PIPELINE_RUN_NAME} --tcp=$(params.OAUTH_PORT):$(params.APP_PORT) -n ${PIPELINE_NAMESPACE}"
+          oc create service clusterip ${PIPELINE_RUN_NAME} --tcp=$(params.OAUTH_PORT):$(params.APP_PORT) -n ${PIPELINE_NAMESPACE} --dry-run=client -o yaml | oc apply -f - || echo "Service already exists or we couldnt create"
+          oc patch service ${PIPELINE_RUN_NAME} -p '{"spec":{"selector":{"tekton.dev/pipelineRun": "'${PIPELINE_RUN_NAME}'"}}}' -n ${PIPELINE_NAMESPACE}
+          oc patch service ${PIPELINE_RUN_NAME} -p '{"spec":{"selector":{"tekton.dev/taskRun": "'${PIPELINE_RUN_NAME}'-oauth-promote"}}}' -n ${PIPELINE_NAMESPACE}
+          oc get svc ${PIPELINE_RUN_NAME} -o json -n ${PIPELINE_NAMESPACE} | sed '/"app": "'${PIPELINE_RUN_NAME}'"/d' | oc apply -f - -n ${PIPELINE_NAMESPACE}
+          oc annotate service ${PIPELINE_RUN_NAME} service.beta.openshift.io/serving-cert-secret-name=${PIPELINE_RUN_NAME}-secret-tls -n ${PIPELINE_NAMESPACE}
+          echo -e "\n"
+
+          echo "Create Route for Oauth Pod"
+          oc expose service ${PIPELINE_RUN_NAME} --name ${PIPELINE_RUN_NAME} --port $(params.OAUTH_PORT) -n ${PIPELINE_NAMESPACE} --dry-run=client -o yaml | oc apply -f - || echo "Route already exists or we couldnt create"
+
+          echo "Annotate ServiceAccount for Pipeline"
+          oc -n ${PIPELINE_NAMESPACE} annotate serviceaccount ${TASK_SERVICEACCOUNTNAME} --overwrite=true serviceaccounts.openshift.io/oauth-redirectreference.first='{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"'${PIPELINE_RUN_NAME}'"}}'
+          echo -e "\n"
+
+          echo "Create Cookie Secret for Oauth Pod"
+          echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c43) > /memory-storage/session-secret
+          echo -e "\n"
+
+          echo "Extract TLS Cert/Key for Oauth Pod"
+          oc extract secret/${PIPELINE_RUN_NAME}-secret-tls --keys=tls.crt --to=/memory-storage -n ${PIPELINE_NAMESPACE}
+          oc extract secret/${PIPELINE_RUN_NAME}-secret-tls --keys=tls.key --to=/memory-storage -n ${PIPELINE_NAMESPACE}
+      env:
+        - name: PIPELINE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: PIPELINE_RUN_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['tekton.dev/pipelineRun']
+        - name: TASK_SERVICEACCOUNTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+    - name: openshift-oauth-proxy-listener
+      image: $(params.OPENSHIFT_OAUTH_IMAGE)
+      command:
+        - /bin/bash
+      volumeMounts:
+        - mountPath: /memory-storage
+          name: memory-storage
+      env:
+        - name: TASK_SERVICEACCOUNTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+      args:
+        - -c
+        - |
+          echo "Checking if we have the requirements to start oauth proxy"
+          temp_counter=10
+          if [ ! -f /memory-storage/session-secret ]; then
+            echo "No session-secret found, waiting for 10 seconds"
+            while [ ! -f /memory-storage/session-secret ] && [ $temp_counter -gt 0 ]; do
+              sleep 1
+              temp_counter=$((temp_counter-1))
+            done
+          fi
+          
+          temp_counter=10
+          if [ ! -f /memory-storage/tls.crt ]; then
+            echo "No tls.crt found, waiting for 10 seconds"
+            while [ ! -f /memory-storage/tls.crt ] && [ $temp_counter -gt 0 ]; do
+              sleep 1
+              temp_counter=$((temp_counter-1))
+            done
+          fi
+
+          temp_counter=10
+          if [ ! -f /memory-storage/tls.key ]; then
+            echo "No tls.key found, waiting for 10 seconds"
+            while [ ! -f /memory-storage/tls.key ] && [ $temp_counter -gt 0 ]; do
+              sleep 1
+              temp_counter=$((temp_counter-1))
+            done
+          fi
+ 
+          echo "Starting oauth proxy"
+          oauth-proxy \
+            -provider=openshift \
+            -request-logging=true \
+            -https-address=:$(params.OAUTH_PORT) \
+            -http-address= \
+            -email-domain=* \
+            -upstream=http://localhost:$(params.APP_PORT) \
+            -tls-cert=/memory-storage/tls.crt \
+            -tls-key=/memory-storage/tls.key \
+            -cookie-secret-file=/memory-storage/session-secret \
+            -openshift-service-account=${TASK_SERVICEACCOUNTNAME}\
+            -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt &
+          OAUTH_PID=$!
+          echo "Oauth proxy started with PID: ${OAUTH_PID}"
+          sleep infinity
+          
+  volumes:
+    - name: memory-storage
+      emptyDir: {}
+  steps:
+    - name: http-app
+      image: image-registry.openshift-image-registry.svc:5000/openshift/httpd:latest
+
+  # - name: openshift-oauth-proxy-listener
+  #   image: "$(params.OPENSHIFT_OAUTH_IMAGE)"
+  #   command: ["oauth-proxy"]
+  #   volumeMounts:
+  #     - mountPath: /memory-storage
+  #       name: memory-storage  
+  #   args:
+  #     - '-provider=openshift'
+  #     - '-https-address=:8888'
+  #     - '-http-address='
+  #     - '-email-domain=*'
+  #     - '-upstream=http://localhost:8080'
+  #     - '-tls-cert=/memory-storage/tls.crt'
+  #     - '-tls-key=/memory-storage/tls.key'
+  #     - '-cookie-secret-file=/memory-storage/session-secret'
+  #     - '-openshift-service-account=${TASK_SERVICEACCOUNTNAME}'
+  #     - '-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+  #     - '-skip-auth-regex=^/metrics$'
+  #     - '-skip-auth-regex=^/health$'
+  #     - '-skip-auth-regex=^/ready$'
+  #     - '-request-logging=true'
+  #   env:
+  #     - name: TASK_SERVICEACCOUNTNAME
+  #       valueFrom:
+  #         fieldRef:
+  #           fieldPath: spec.serviceAccountName

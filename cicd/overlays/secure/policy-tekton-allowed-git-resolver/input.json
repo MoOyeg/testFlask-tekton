@@ -1,0 +1,33 @@
+// For some reaso,OCP parsing the JSON file is not working. So, I have used YAML file to create the pipeline.
+{
+    "apiVersion": "tekton.dev/v1",
+    "kind": "Pipeline",
+    "metadata": {
+        "name": "generate-random-number-pipeline"
+    },
+    "spec": {
+        "tasks": [
+            {
+                "name": "generate-random-number",
+                "taskRef": {
+                    "kind": "Task",
+                    "params": [
+                        {
+                            "name": "url",
+                            "value": "https://github.com/tektoncd/catalog.git"
+                        },
+                        {
+                            "name": "revision",
+                            "value": "main"
+                        },
+                        {
+                            "name": "pathInRepo",
+                            "value": "task/generate-random-number/0.6/generate-random-number.yaml"
+                        }
+                    ],
+                    "resolver": "git"
+                }
+            }
+        ]
+    }
+}

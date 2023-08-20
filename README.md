@@ -108,14 +108,36 @@ Depending on your version of openshift pipelines the buildah task might require 
 ## Gatekeeper Enforcement 
 With the use of the Gatekeeper/OPA you can create policies to enforce/inform of cluster violations.There are sample policies to show an example of enforcing with tekton.Please make sure to install the gatekeeper operator first.
 
-Make sure all tekton pipelines have an ACS Policy Checking Task(Might need to run it 2x as API has to create CRD for contraint)  
+Note: Might need to run it 2x as API has to create CRD for contraint  
+
+Make sure all tekton pipelines have an ACS Policy Checking Task  
 ```bash
 oc kustomize ./cicd/overlays/secure/acs/policy-tekton-checking | oc create -f -
 ```
 
-Make sure all tekton pipelines have an ACS Policy Scanning Task(Might need to run it 2x as API has to create CRD for contraint)  
+Make sure all tekton pipelines have an ACS Policy Scanning Task  
 ```bash
 oc kustomize ./cicd/overlays/secure/acs/policy-tekton-scanning | oc create -f -
+```
+
+Make sure all tekton pipelines have the appropriate apiVersions
+```bash
+oc kustomize ./cicd/overlays/secure/policy-tekton-api-version/ | oc create -f -
+```
+
+Make sure all tekton pipelines have a max failure timeout set.
+```bash
+oc kustomize ./cicd/overlays/secure/policy-tekton-timeout-set | oc create -f -
+```
+
+Make sure all tetkon pipeline resolvers only use approved git registries
+```bash
+oc kustomize ./cicd/overlays/secure/policy-tekton-allowed-git-resolver | oc create -f -
+```
+
+Make sure all tetkon pipeline resolvers only use approved bundle repos
+```bash
+oc kustomize ./cicd/overlays/secure/policy-tekton-allowed-bundle-resolver | oc create -f -
 ```
 
 After the above constraints are created, you should not longer be able to run the non-secure pipeline creation above but you should be able to run the secure version.

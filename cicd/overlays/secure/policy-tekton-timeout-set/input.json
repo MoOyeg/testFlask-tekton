@@ -1,0 +1,112 @@
+{
+    "apiVersion": "tekton.dev/v1",
+    "kind": "PipelineRun",
+    "metadata": {
+        "creationTimestamp": "2023-08-19T17:26:41Z",
+        "finalizers": [
+            "chains.tekton.dev/pipelinerun"
+        ],
+        "generation": 1,
+        "labels": {
+            "tekton.dev/pipeline": "testflask-pipeline"
+        },
+        "name": "testflask-pipelinerun-demo13",
+        "namespace": "1234-tekton",
+        "resourceVersion": "20493436",
+        "uid": "a41ec35c-ed3c-4c34-8733-dd304c4cb427"
+    },
+    "spec": {
+        "params": [
+            {
+                "name": "APP_CONFIG",
+                "value": "./gunicorn/gunicorn.conf.py"
+            },
+            {
+                "name": "APP_NAME",
+                "value": "testflask"
+            },
+            {
+                "name": "APP_MODULE",
+                "value": "runapp:app"
+            },
+            {
+                "name": "MYSQL_DATABASE",
+                "value": "testdb"
+            },
+            {
+                "name": "SECRET_NAME",
+                "value": "my-secret"
+            },
+            {
+                "name": "MYSQL_HOST",
+                "value": "mysql"
+            },
+            {
+                "name": "NAMESPACE_DEV",
+                "value": "appdev"
+            },
+            {
+                "name": "NAMESPACE_PROD",
+                "value": "appprod"
+            },
+            {
+                "name": "GIT_URL",
+                "value": "https://github.com/MoOyeg/testFlask.git"
+            },
+            {
+                "name": "GIT_BRANCH",
+                "value": "master"
+            },
+            {
+                "name": "PYTHON_VERSION",
+                "value": "3.9.16"
+            },
+            {
+                "name": "OUTPUT_IMAGE",
+                "value": "quay.io/mooyeg/testflask"
+            }
+        ],
+        "pipelineRef": {
+            "name": "testflask-pipeline"
+        },
+        "status": "PipelineRunPending",
+        "taskRunTemplate": {
+            "serviceAccountName": "pipeline"
+        },
+        "timeouts": {
+            "pipeline": "3h20m0s"
+        },
+        "workspaces": [
+            {
+                "name": "testflask-cicd-pvc",
+                "volumeClaimTemplate": {
+                    "metadata": {
+                        "creationTimestamp": null
+                    },
+                    "spec": {
+                        "accessModes": [
+                            "ReadWriteOnce"
+                        ],
+                        "resources": {
+                            "requests": {
+                                "storage": "1Gi"
+                            }
+                        }
+                    },
+                    "status": {}
+                }
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastTransitionTime": "2023-08-19T17:26:41Z",
+                "message": "PipelineRun \"testflask-pipelinerun-demo13\" is pend                                                                        ing",
+                "reason": "PipelineRunPending",
+                "status": "Unknown",
+                "type": "Succeeded"
+            }
+        ]
+    }
+}

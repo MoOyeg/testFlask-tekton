@@ -1,0 +1,5 @@
+flask-approval-app/__pycache__/*
+.vscode/*
+.env
+output/*
+
