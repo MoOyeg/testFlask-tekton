@@ -1,0 +1,8 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: PolicyTektonAPIVersion
+metadata:
+  name: policytektonapiversion
+spec:
+  match:
+    namespace:
+      - 1234-tekton
